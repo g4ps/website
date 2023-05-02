@@ -1,0 +1,12 @@
+import { Outlet, Link } from "react-router-dom";
+
+const Home = () => {
+    return (
+        <div>
+          <h1>Mighty Gene's website</h1>
+          <Link to="/maths">Maths</Link>
+        </div>
+    );
+};
+
+export default Home;

@@ -1,0 +1,42 @@
+.courses_list {
+    display: flex;
+    flex-direction: row;
+    // justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    .course {
+	.upper {
+	    .name {
+		margin: 5px 0 12px;
+		font-size: 1.5rem;
+	    }
+	    .author_and_edition {
+		margin: 12px 0 12px;
+	    }
+	}
+	padding: 20px;
+	box-sizing: border-box;
+	max-width: 250px;
+	width: 100%;
+	.progress {
+	    margin: 12px 0;
+	    display: flex;
+	    flex-wrap: wrap;
+	    gap: 3px;
+	    overflow: hidden;
+	    transition: max-height, 0.2s;
+	    .progressTile {
+		width: 20px;
+		height: 20px;
+		border-radius: 4px;
+	    }
+	}
+	button {
+	    margin: 10px 0;
+	    background: lightgreen;
+	    border: none;
+	    padding: 15px;
+	}
+    }
+
+}
