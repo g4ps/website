@@ -1,6 +1,8 @@
 {
-    "github": "https://github.com/g4ps",
+    "statuses": "https://raw.githubusercontent.com/g4ps/misc/master/various_statuses.json",
+    "github": "https://github.com/g4ps/",
     "exercises": "https://github.com/g4ps/exercises",
+    "telegram": "https://t.me/Evgen1900",
     "exercises_progress": "https://raw.githubusercontent.com/g4ps/exercises/master/progress.json",
     "mail": "eum4rckin@yandex.ru"
 }

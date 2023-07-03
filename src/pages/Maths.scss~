@@ -1,7 +1,0 @@
-.course {
-
-}
-.progress {
-    display: flex;
-    flex-wrap: wrap;
-}

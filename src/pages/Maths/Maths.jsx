@@ -1,5 +1,5 @@
 import {useState, useEffect, useMemo} from 'react';
-import links from '../links.json';
+import links from '../../info.json';
 import "./Maths.scss";
 
 const Status = ({list}) => {
@@ -13,10 +13,10 @@ const Progress = ({chaptersTotal, chaptersFinished}) => {
 
     const [show, setShow] = useState(false);
 
-    const colors = useMemo(() => {
+    const progressColors = useMemo(() => {
+        
         let ret = [];
         for (let i = 0; i < chaptersTotal; i++) {
-
             let deg = (i - chaptersFinished + 1);
             if (deg >= 1)
                 deg = 1;
@@ -40,7 +40,7 @@ const Progress = ({chaptersTotal, chaptersFinished}) => {
               style={{maxHeight: !show ? "0px": "500px"}}
               className="progress">
               {
-                  colors.map((i, pos) => 
+                  progressColors.map((i, pos) => 
                       <div
                         key={pos}
                         className="progressTile"style={{backgroundColor: i}}>
@@ -66,22 +66,28 @@ const Course = ({name, author, edition, status, note, link, progress}) => {
         }
     };
 
-    const back_color_status_map = (str) => {
+    const status_to_var = (str) => {
         switch(str) {
         case "finished":
-            return "#eeffee";
+            return "--main-success";
         case "in_progress":
-            return "#ffffee";
+            return "--main-iffy";
         case "in_hiatus":
-            return "#ffeeee";
+            return "--main-failure";
         default:
-            return "#eeeeee";
+            break;
         }
+        return "--main-unknown";
+    };
+
+    const back_color_status_map = (str) => {
+        return `var(${status_to_var(str)})`;
     };
     
     return <div className="course"
                 style={{
-                    background: back_color_status_map(status)
+                    background: `var(${status_to_var(status)})`,
+                    border: `2px solid var(${status_to_var(status)}-border)`
                 }}
            >
              <div className="upper">
@@ -101,7 +107,7 @@ const Course = ({name, author, edition, status, note, link, progress}) => {
                {text_status_map(status)}
              </div>
 
-             {progress && <Progress
+             {progress && status !== "finished" && <Progress
                             chaptersTotal={progress.total_chapters}
                             chaptersFinished={progress.finished_chapters}
                           />}
@@ -174,8 +180,8 @@ const Maths = () => {
                  Solutions for (some of) the exercies in the books are scrupulously written down, and presented for your viewing pleasure.
                </p>
                <p>
-                 Given that no one on the God's green earth (except for me) seen or read those
-                 solutions, it goes without saying that they are riddled with errors.
+                 Given that no one on the God's green earth (except for me) has seen or read
+                 any of those solutions, it goes without saying that they are riddled with errors.
                </p>
                <p>
                  This page has a related <a href={links.exercises}>github repository</a>. If those

@@ -5,6 +5,7 @@
     flex-wrap: wrap;
     gap: 20px;
     .course {
+	border-radius: 12px;
 	.upper {
 	    .name {
 		margin: 5px 0 12px;
@@ -35,7 +36,8 @@
 	    margin: 10px 0;
 	    background: lightgreen;
 	    border: none;
-	    padding: 15px;
+	    padding: 10px 20px;
+	    border-radius: 20px;
 	}
     }
 
