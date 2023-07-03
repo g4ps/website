@@ -23,8 +23,8 @@ const Progress = ({chaptersTotal, chaptersFinished}) => {
             if (deg <= 0)
                 deg = 0;
             let hdeg = Math.floor(120 - deg * 120);
-            let gdeg = deg != 1 ? 100 : 0;
-            let st = deg != 1 ? 65 : 80;
+            let gdeg = deg !== 1 ? 100 : 0;
+            let st = deg !== 1 ? 65 : 80;
             ret.push(`hsl( ${hdeg}, ${gdeg}%, ${st}%`) ;
         };
         return ret;
@@ -79,10 +79,6 @@ const Course = ({name, author, edition, status, note, link, progress}) => {
         }
         return "--main-unknown";
     };
-
-    const back_color_status_map = (str) => {
-        return `var(${status_to_var(str)})`;
-    };
     
     return <div className="course"
                 style={{
@@ -120,8 +116,7 @@ const CoursesList = ({list, status}) => {
 
     const coursesList = useMemo(() => {
         return list.filter(i => i.status === status);
-
-    }, [list]);
+    }, [list, status]);
     
     return <div className="courses_list">
              {coursesList?.map((i, pos) =>
