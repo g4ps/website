@@ -41,7 +41,6 @@ const Employment = () => {
         default:
             return "impossible to know";
         };
-        return "";
     }, [empStatus]);
 
     const mainText = useMemo(() => {
@@ -126,12 +125,13 @@ const Contacts = () => {
                he is involved in something that you shouldn't be involved in, but because there
                is about a dozen ways
                (<a href="https://en.wikipedia.org/wiki/Yevgeny">yes, really</a>) to
-               translate his name in English. His favourite one is (drumroll please...) Gene.
+               translate his name in English. His favorite one is (drumroll please...) Gene.
              </p>
              <p>
                Professionally Gene is known as the top-notch frontend-developer with a 3+
                years of experience. He is best known for his skills in React, JS, HTML,
-               CSS, NodeJS, Python and PHP.
+               CSS, NodeJS, Python and PHP. He is also known as a great collegue, who doesn't
+               buckle under pressure and is always happy to help.
                List of areas of his employment is short and sweet: banking industry and freelance.
                Although Gene would've loved to provide links to his works, he can't
                because all of them were made for internal use only.
@@ -144,16 +144,32 @@ const Contacts = () => {
                too shy to admit it. Gene also knows data structures and algorithms like no one else,
                and he can prove it. If Gene doesn't know something, then it's because he's
                currently trying to learn it. 
-             </p>
+             </p>             
              <p>
                Although Gene does not have any formal education (outside of being
                an <a href="/files/certificate_fthemis.pdf">Alumni of Ecole 42</a>),
                he compensates for it with a hefty amount
                of <a href="../maths">self-education</a> (although that page represents the latest
-               in Gene's self-education, it is not a exhaustive list). When it comes to languages,
-               Gene knows his English, Russian and he even knows a bit of Greek.
+               in Gene's self-education, it is not a exhaustive list).
+               When Gene talks about his education, he likes to brag about the time
+               when he
+               had <a href="http://math.buffalostate.edu/~cunnindw/Errata2.pdf">fixed</a> a
+               typo in a book. By doing so, he usually tries to say that although his
+               education is not formal, it is nothing to sneeze at.
+               When it comes to languages, Gene knows his English, Russian and he even
+               knows a bit of Greek.
              </p>
-
+             <p>
+               Other than that, Gene is an open-source enthusiast and a philanthropist. His
+               favourite editor is Emacs, his favourite chariry
+               is <a href="https://podari-zhizn.ru/en">Gift of Life</a>,
+               he religiously believes that the word "standard"
+               should end with a "t", he uses the word "howdy" way too much, he thinks that
+               "injective, surjective" is ten times better than "one-to-one, onto",
+               his favourite flavor of English is American
+               (with the exception of word "favourite"), he likes Oxford commas, and
+               he believes in GCH.
+             </p>
            </div>;
 };
 

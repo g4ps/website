@@ -1,6 +1,5 @@
 import {useState, useEffect, useCallback} from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import logo from './logo.svg';
 import './App.scss';
 import Layout from './pages/Layout/Layout.jsx';
 import Home from './pages/Home/Home.jsx';
@@ -14,7 +13,7 @@ const App = () =>  {
     useEffect(() => {
         //setting proper variables to proper 
         setIsDarkTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
-
+        console.log("Howdy there, partner");
     }, []);
 
     useEffect(() => {
