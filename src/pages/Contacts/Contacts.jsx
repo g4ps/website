@@ -146,7 +146,7 @@ const Contacts = () => {
                currently trying to learn it. 
              </p>
              <p>
-               Althoug Gene does not have any formal education (outside of being
+               Although Gene does not have any formal education (outside of being
                an <a href="/files/certificate_fthemis.pdf">Alumni of Ecole 42</a>),
                he compensates for it with a hefty amount
                of <a href="../maths">self-education</a> (although that page represents the latest
