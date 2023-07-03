@@ -1,0 +1,19 @@
+.home {
+    a {
+	text-decoration: none;
+	color: var(--text-color);
+    }
+    ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	li {
+	    padding: 12px;
+	    width: 100%;
+	    box-sizing: border-box;
+	    margin: 12px 0;
+	    border: 2px solid var(--text-color);
+	    border-radius: 6px;
+	}
+    }
+}

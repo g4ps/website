@@ -124,7 +124,7 @@ const Contacts = () => {
              <p>
                Like many great things in our life, Gene has many names. This is not because
                he is involved in something that you shouldn't be involved in, but because there
-               are about a dozen ways
+               is about a dozen ways
                (<a href="https://en.wikipedia.org/wiki/Yevgeny">yes, really</a>) to
                translate his name in English. His favourite one is (drumroll please...) Gene.
              </p>
@@ -134,12 +134,12 @@ const Contacts = () => {
                CSS, NodeJS, Python and PHP.
                List of areas of his employment is short and sweet: banking industry and freelance.
                Although Gene would've loved to provide links to his works, he can't
-               because all of them we made for internal use only.
+               because all of them were made for internal use only.
              </p>
              <p>
-               Semi-professionally Gene's known as the Jack of all trades. He's got experience
-               with C, C++, Python, Scheme, several kinds of Assembler for several
-               kinds of platforms, and a lot of other languages. When it comes to technology, he
+               Semi-professionally Gene's known as the Gene of all trades. He's got experience
+               with C, C++, Python, Scheme, several kinds of assembler for several
+               kinds of platforms, and a lot of other languages. When it comes to technology he
                knows Docker, he knows UNIX and he probably knows a lot of other stuff, but he's
                too shy to admit it. Gene also knows data structures and algorithms like no one else,
                and he can prove it. If Gene doesn't know something, then it's because he's
