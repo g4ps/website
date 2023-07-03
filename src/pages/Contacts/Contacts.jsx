@@ -161,11 +161,11 @@ const Contacts = () => {
              </p>
              <p>
                Other than that, Gene is an open-source enthusiast and a philanthropist. His
-               favourite editor is Emacs, his favourite chariry
+               favourite editor is Emacs, his favourite charity
                is <a href="https://podari-zhizn.ru/en">Gift of Life</a>,
                he religiously believes that the word "standard"
                should end with a "t", he uses the word "howdy" way too much, he thinks that
-               "injective, surjective" is ten times better than "one-to-one, onto",
+               notation "injective, surjective" is ten times better than "one-to-one, onto",
                his favourite flavor of English is American
                (with the exception of word "favourite"), he likes Oxford commas, and
                he believes in GCH.
