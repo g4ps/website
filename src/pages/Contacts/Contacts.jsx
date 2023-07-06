@@ -104,9 +104,15 @@ const Contacts = () => {
                </li>
              </ul>
              <p>
-               Gene does not believe in social media and because of it he doesn't have any,
-               so those methods are the only ones which can get you in touch.
+               Although Gene passionately hates any social media, he likes to have cash,
+               and that's why he's got a              
              </p>
+             <ul>
+               <li>
+                 <a href={links.linked}>LinkedIn</a>
+               </li>
+             </ul>
+             
              <h3>
                About Gene
              </h3>
