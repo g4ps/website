@@ -4,6 +4,7 @@ import './App.scss';
 import Layout from './pages/Layout/Layout.jsx';
 import Home from './pages/Home/Home.jsx';
 import Maths from './pages/Maths/Maths.jsx';
+import Examples from './pages/Examples/Examples.jsx';
 import Contact from './pages/Contacts/Contacts.jsx';
 
 const App = () =>  {
@@ -49,7 +50,7 @@ const App = () =>  {
               <Route index element={<Home />} />
               <Route path="contacts" element={<Contact />} />
               <Route path="maths" element={<Maths />}/>
-              <Route path="maths" element={<Maths />}/>
+              <Route path="examples" element={<Examples />}/>
             </Route>
           </Routes>
         </BrowserRouter>

@@ -16,6 +16,11 @@ const Home = () => {
                 Gene's doing Maths
               </li>
             </Link>
+            <Link to="/examples">
+              <li>
+                Examples of Gene's work 
+              </li>
+            </Link>
           </ul>
         </div>
     );
