@@ -1,9 +1,12 @@
 {
     "statuses": "https://raw.githubusercontent.com/g4ps/misc/master/various_statuses.json",
     "github": "https://github.com/g4ps/",
+    "website_repo": "https://github.com/g4ps/website",
     "exercises": "https://github.com/g4ps/exercises",
     "telegram": "https://t.me/Evgen1900",
     "exercises_progress": "https://raw.githubusercontent.com/g4ps/exercises/master/progress.json",
     "mail": "eum4rckin@yandex.ru",
-    "linked": "https://www.linkedin.com/in/evgeny-markin-0b2840282/"
+    "linked": "https://www.linkedin.com/in/evgeny-markin-0b2840282/",
+    "logic_progress": "in_progress",
+    "logic_last_update": "2023-07-18T14:06:48.874Z"
 }

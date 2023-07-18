@@ -31,8 +31,7 @@ const Progress = ({chaptersTotal, chaptersFinished}) => {
        
     }, [chaptersTotal, chaptersFinished]);
     
-    return<div>
-
+    return<div className="logicPreface">
             <button onClick={() => {setShow(!show)}}>
               {(!show ? "Show" : "Close") + " progress"}
             </button>

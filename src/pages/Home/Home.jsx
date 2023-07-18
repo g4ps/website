@@ -6,14 +6,19 @@ const Home = () => {
         <div className="home">
           <h1>Mighty Gene's personal page</h1>
           <ul>
-            <Link to="/contacts">
+            <Link to="/logic">
               <li>
-                Gene's Bio and Contacts
+                Gene's doing Logic (and you can too)
               </li>
-            </Link>
+            </Link>            
             <Link to="/maths">
               <li>
                 Gene's doing Maths
+              </li>
+            </Link>
+            <Link to="/contacts">
+              <li>
+                Gene's Bio and Contacts
               </li>
             </Link>
           </ul>

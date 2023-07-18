@@ -1,0 +1,73 @@
+.visualLogicTableWrapper {
+    max-width: 100%;
+    overflow: scroll;
+
+    background: var(--logic-back);
+    &::-webkit-scrollbar {
+	display: none;
+    }
+    -ms-overflow-style: none; 
+    scrollbar-width: none;
+}
+
+.visualLogicTable {
+    width: fit-content;
+    box-sizing: border-box;
+    .upper {
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+    }
+    .name {
+	text-align: center;
+	margin: 0 10px;
+    }
+    .op {
+	// width: 100%;
+	margin: 5px;
+	padding: 12px;
+	border-radius: 20px;
+	border: 2px solid var(--text-color);
+	height: fit-content;
+    }
+    .var {
+	width: 24px;
+	height: 24px;
+	color: var(--text-dark-color);
+	border: 2px solid var(--text-color);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 10px;
+	border-radius: 1000px;
+	background: lightgreen;
+    }
+    .args {
+	display: flex;
+    }
+    .hide {
+	.args {
+	    display: none;
+	}
+    }
+    .cdots {
+	width: 100%;
+	text-align: center;
+    }
+
+}
+
+.visualLogicTree {
+    max-width: 100%;
+    max-height: 600px;
+    overflow: scroll;
+
+    &::-webkit-scrollbar {
+	display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+
+    border: 1px solid var(--text-color);	
+}
