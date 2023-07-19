@@ -59,11 +59,6 @@ const Logic = () => {
             which Gene's pretty fond of. Thus Gene's decided that one day he might learn them
             some day, but had put those projects on the back burner.
           </p>
-          <p>
-            Some time later, Gene's decided to meet some people for some exquisite
-            georgian lunch, and during the discussion of some unrelated stuff, the
-            subject of math came up. 
-          </p>
           <h3>
             Why sould I learn it?
           </h3>
@@ -108,10 +103,7 @@ const Logic = () => {
               </p>
               :
               <p>
-                No, it's not. Work is in progress, but if you're seeing this message on Gene's
-                website, then there's still some stuff, that you can find useful and/or
-              interesting. The rough outline of the progress of the books is
-                located <Link to="progress">here</Link>
+                No, it's not.  <Link to="progress">Link to progress page</Link>
               </p>
           }
           <h3>

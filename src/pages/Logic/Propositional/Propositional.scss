@@ -1,6 +1,27 @@
+.withPanels {
+    display: flex;
+    justify-content: space-between;
+    width: fit-content;
+    max-width: 100%;
+    .controls {
+	min-width: 210px;
+	width: 210px;
+	background: red;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	// justip
+	button {
+	    height: 70px;
+	    width: 70px;
+	    box-sizing: border-box;
+	}
+    }
+}
+
 .visualLogicTableWrapper {
     max-width: 100%;
-    overflow: hidden;
+    overflow: scroll;
 
     background: var(--logic-back);
     &::-webkit-scrollbar {
@@ -8,11 +29,15 @@
     }
     -ms-overflow-style: none; 
     scrollbar-width: none;
+
 }
 
 .visualLogicTable {
     width: fit-content;
+    max-width: calc(100% - 200px);
     box-sizing: border-box;
+    background: var(--logic-back);
+
     .upper {
 	display: flex;
 	width: 100%;
@@ -23,12 +48,15 @@
 	margin: 0 10px;
     }
     .op {
-	// width: 100%;
+	width: fit-content;
 	margin: 5px;
 	padding: 12px;
 	border-radius: 20px;
 	border: 2px solid var(--text-color);
 	height: fit-content;
+    }
+    .op.pick {
+	border: 2px solid blue;
     }
     .var {
 	width: 24px;
@@ -41,6 +69,9 @@
 	margin: 10px;
 	border-radius: 1000px;
 	background: lightgreen;
+    }
+    .var.pick {
+	border: 2px solid blue;
     }
     .args {
 	display: flex;
@@ -55,19 +86,4 @@
 	text-align: center;
     }
 
-}
-
-.visualLogicTree {
-    max-width: 100%;
-    max-height: 600px;
-    overflow: scroll;
-
-    &::-webkit-scrollbar {
-	display: none;
-    }
-    /* Hide scrollbar for IE, Edge and Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-
-    border: 1px solid var(--text-color);	
 }

@@ -3,11 +3,27 @@ const Progress = () => {
         <div>
           <h1>
             Logic book progress
-          </h1>
+        </h1>
           <p>
-            Unfortunately, the project is in an extremely early stage, so there's even no 
-            rough outline of the of what's coming. You must be pretty happy by
-            now that you haven't paid a dime for the thing.
+            The (extremely) rough ouline of the book at this point looks like
+          </p>
+          <ul>
+            <li>
+              Propositional logic
+            </li>
+            <li>
+              Words on notation and such
+            </li>
+            <li>
+              First-order logic
+            </li>
+            <li>
+              Everything else
+            </li>
+          </ul>
+          <p>
+            As of now, only a small part of the section on the propositional logic is
+            done.
           </p>
         </div>
     );

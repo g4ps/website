@@ -6,11 +6,16 @@ const Home = () => {
         <div className="home">
           <h1>Mighty Gene's personal page</h1>
           <ul>
-            <Link to="/logic">
+            <Link to="/graphBoard">
               <li>
-                Gene's doing Logic (and you can too)
+                GraphBoard
               </li>
             </Link>            
+            {/* <Link to="/logic"> */}
+            {/*   <li> */}
+            {/*     Gene's doing Logic (and you can too) */}
+            {/*   </li> */}
+            {/* </Link>            */} 
             <Link to="/maths">
               <li>
                 Gene's doing Maths
@@ -27,3 +32,18 @@ const Home = () => {
 };
 
 export default Home;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

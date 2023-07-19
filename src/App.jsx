@@ -10,6 +10,7 @@ import Logic from './pages/Logic/Logic.jsx';
 import ErrorPage from './pages/ErrorPage/ErrorPage.jsx';
 import Propositional from './pages/Logic/Propositional/Propositional.jsx';
 import Progress from './pages/Logic/Progress/Progress.jsx';
+import GraphBoard from './pages/GraphBoard/GraphBoard.jsx';
 import {makeDark, makeLight, toggle} from './features/theme/themeSlice.jsx';
 
 const App = () =>  {
@@ -65,6 +66,7 @@ const App = () =>  {
               <Route path="contacts" element={<Contact />} />
               <Route path="maths" element={<Maths />}/>
               <Route path="logic" element={<Logic />}/>
+              <Route path="graphBoard" element={<GraphBoard />}/>
               <Route path="logic/progress" element={<Progress />}/>
               <Route path="logic/propositional" element={<Propositional />}/>
               <Route path="*" element={<ErrorPage />}/>

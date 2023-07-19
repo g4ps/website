@@ -1,0 +1,15 @@
+.visualLogicGraph {
+    max-width: 100%;
+    max-height: 600px;
+    overflow: scroll;
+
+    &::-webkit-scrollbar {
+	display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+
+    border: 1px solid var(--text-color);	
+}
+

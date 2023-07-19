@@ -1,6 +1,7 @@
 import {examples} from './examples.js';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRef, useState, useEffect, useMemo } from 'react';
+import VisualLogicGraph from '../../../components/VisualLogicGraph/VisualLogicGraph.jsx';
 import { makeDark, makeLight, toggle } from '../../../features/theme/themeSlice.jsx';
 import './Propositional.scss';
 
@@ -32,25 +33,49 @@ const logic_object_to_text = (obj) => {
 
 
 
-const VisualLogicIn = ({obj, depth, showID, currPick}) => {
+const VisualLogicIn = ({obj, depth, showID, currPick, handleCurrPick}) => {
 
     const [hide, setHide] = useState(depth === 0);
+
+    const isPick = useMemo(() => {
+        return currPick?.find(i => i === obj.id) !== undefined ? "pick" : "";
+    }, [currPick]);
+
+    
+    const handleClick = (e) => {
+        e.stopPropagation();
+        handleCurrPick(obj.id);
+    };
+
+    
     
     if (obj.var) {
         return (
-            <div className="var">
+            <div className={`var ${isPick}`}
+                 onClick={handleClick}
+            >
               {obj.var + (showID ? (" " + obj.id) : "")}
             </div>
         );
     }
+
+    
+    
     return (
-        <div className={`${obj.op} op ${hide ? "hide" : ""}`}>
+        <div
+        className={`${obj.op} op ${hide ? "hide" : ""} ${isPick}`}
+          onClick={handleClick}
+        >
           <div className="upper">
             <div/>
             <div className="name">
               {obj.op + (showID ? (" " + obj.id) : "")}
             </div>
-            <div onClick={() => setHide(!hide)}>
+            <div onClick={(e) =>
+                {
+                    e.stopPropagation();
+                    setHide(!hide);
+                }}>
               {hide ? "+" : "-"}
             </div>
           </div>
@@ -58,7 +83,14 @@ const VisualLogicIn = ({obj, depth, showID, currPick}) => {
           <div className="args">
             {
                 obj.args.map((i, pos) =>
-                    <VisualLogicIn obj={i} depth={depth - 1} showID={showID} key={pos}/>
+                    <VisualLogicIn
+                      obj={i}
+                      depth={depth - 1}
+                      showID={showID}
+                      key={pos}
+                      currPick={currPick}
+                      handleCurrPick={handleCurrPick}
+                    />
                 )
             }
           </div>
@@ -75,240 +107,76 @@ const VisualLogicIn = ({obj, depth, showID, currPick}) => {
 const VisualLogicTable = ({obj}) => {
 
     const [currPick, setCurrPick] = useState([]);
+
+    const handleCurrPick = (id) => {
+        // debugger;
+        let n = currPick.slice();
+        if (n.find(i => i === id) !== undefined) {
+            n = n.filter(i => i !== id);
+        }
+        else {
+            n.push(id);
+        }
+        setCurrPick(n);
+    };
+
+    const clearPick = () => setCurrPick([]);
+
     
     return (
-        <div className="visualLogicTableWrapper">
-          <div className="visualLogicTable">
-            <VisualLogicIn
-              obj={obj}
-              depth={3}
-              showID={false}
-              currPick={currPick}
-            />
+        <div className="withPanels">
+          <div className="visualLogicTableWrapper">
+            <div className="visualLogicTable">
+              <VisualLogicIn
+                obj={obj}
+                depth={3}
+                showID={false}
+                currPick={currPick}
+                handleCurrPick={handleCurrPick}
+              />
+            </div>
+
+          </div>
+          <div className="controls">
+            <button onClick={clearPick}>
+              Clear
+            </button>
+            <button>
+              Assoc
+            </button>
+            <button>
+              Commut
+            </button>
+            <button>
+              Commut
+            </button>
+            <button>
+              ID
+            </button>
+            <button>
+              Distr
+            </button>
+            <button>
+              Idem
+            </button>
+            <button>
+              Abs
+            </button>
+            <button>
+              Complem
+            </button>
+            <button>
+              DN
+            </button>
+            <button>
+              DML
+            </button>
+            <button>
+              rm
+            </button>
           </div>
         </div>
-    );
-};
-
-
-const VisualLogicTree = ({obj, picked, isDarkTheme, }) => {
-    
-    const canvasRef = useRef(null);
-    const translate = useRef(null);
-    const zoom = useRef(1);
-    const lastZoom = useRef(1);
-    const isMouseDown = useRef(null);
-    const once = useRef(null);
-    const [smth, setSmth] = useState(0);
-
-    useEffect(() => {
-
-        const canvas = canvasRef.current;
-        if (!canvas.getContext) {            
-            return ;
-        }
-        const ctx = canvas.getContext("2d");
-
-
-
-        const draw = (translate, zm) => {
-            // console.log(translate);
-            // translate = [20, 20];
-            // ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let back_color = isDarkTheme ? "#444" : "#eee";
-            let stroke_color = isDarkTheme ? "white" : "#444";
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-
-            ctx.fillStyle = back_color;
-            ctx.fillRect(-1000000, -100000, 150000000, 150000000);
-            ctx.strokeStyle = stroke_color;
-            ctx.fillStyle = stroke_color;
-            
-            zm && ctx.scale(zm, zm);
-            translate && ctx.translate(translate[0] / zoom.current, translate[1] / zoom.current);
-            // ctx.save();
-            // ctx.setTransform(1, 0, 0, 1, 0, 0);
-            // ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.restore();
-            ctx.font = "20px serif";
-            
-            const drawCirc = (start, rad) => {
-                ctx.beginPath();
-                ctx.arc(start[0], start[1], rad, 0, Math.PI * 2, true); // Outer circle
-                ctx.stroke();
-                ctx.closePath();                
-            };
-
-            const drawLine = (start, end) => {
-                ctx.beginPath();
-                ctx.moveTo(start[0], start[1]);
-                ctx.lineTo(end[0], end[1]);
-                ctx.stroke();
-                ctx.closePath();
-            };
-
-            const drawEdge = (start, end, rad=30) => {
-                ctx.beginPath();
-                const vec = [end[0] - start[0], end[1] - start[1]];
-                let len = Math.sqrt(vec[0] ** 2 + vec[1] ** 2);
-                let nrm = [vec[0] / len, vec[1] / len];
-                ctx.moveTo(start[0] + nrm[0] * rad, start[1] + nrm[1] * rad);
-                ctx.lineTo(end[0] - nrm[0] * rad, end[1] - nrm[1] * rad);
-                ctx.stroke();
-            };
-
-            const drawNode = (start, rad, ins) => {
-                drawCirc(start, rad);
-
-                const toSymb = (ins) => {
-                    if (ins === "or")
-                        return "∨";
-                    if (ins === "and")
-                        return "∧";
-                    if (ins === "not")
-                        return " ¬";
-                    return " " + ins;
-                };
-                
-                ctx.fillText(toSymb(ins), start[0] - rad/2, start[1] + rad/4);
-            };
-
-            const drawGraph = (start=[40, 250], obj, rad=30, dir) => {
-
-                drawNode(start, rad, obj.var || obj.op);
-
-                if (!obj?.args )
-                    return ;
-
-                const dx = 300;
-                const dy = 100;
-
-                if (obj?.args?.length === 1) {
-                    obj?.args?.map((i) => {
-                        let endPath = [start[0], start[1] + dy];
-                        drawGraph(endPath, i, rad, dir);
-                        drawEdge(start, endPath, rad);
-                    });
-                }
-                if (obj?.args?.length === 2) {
-                    let i = 1;
-                    if (dir === "down")
-                        i = 0; 
-                    obj?.args?.map((j, pos) => {
-                        let endPath = [start[0] + dx * i, start[1] + dy];
-                        drawGraph(endPath, j, rad, dir ||
-                                  (pos === 0 ? "up" : "down"));
-                        drawEdge(start, endPath, rad);
-
-                        if (dir !== "up" && dir !== "down")
-                            i -= 1;
-                        i -= 1;
-                    });
-                }
-            };
-            // ctx.restore();
-            drawGraph([50, 50], obj, 20);
-
-        };
-
-
-
-        isMouseDown.current = false;
-        var downPosition = [0, 0];
-        translate.current = [0, 0];
-        draw(translate.current);
-
-
-
-
-        if (!once.current) {
-            once.current = true;
-            // console.log("hello");
-
-            canvasRef.current.addEventListener("mousedown", (e) => {
-                isMouseDown.current = true;
-                downPosition = [e.offsetX, e.offsetY];
-                // console.log("mouse down " + downPosition);
-            });
-            canvasRef.current.addEventListener("mouseup", (e) => {
-                // downPosition = [e.offsetX, e.offsetY];
-                // console.log("mouse up " + downPosition);
-                isMouseDown.current = false;
-            });
-            canvasRef.current.addEventListener("mousemove", (e) => {
-                // console.log(e);
-                if (isMouseDown.current) {
-                    translate.current = [e.offsetX - downPosition[0], e.offsetY - downPosition[1]];
-                    downPosition = [e.offsetX, e.offsetY];
-                    draw(translate.current);
-                }
-            }, false);
-            canvasRef.current.addEventListener("touchstart", (e) => {
-                e.preventDefault();
-                isMouseDown.current = true;
-                downPosition = [e.touches[0].clientX, e.touches[0].clientY];
-                // console.log("mouse down " + downPosition);
-            }, false);
-            canvasRef.current.addEventListener("touchend", (e) => {
-                e.preventDefault();
-                isMouseDown.current = false;
-                // downPosition = [e.offsetX, e.offsetY];
-                // console.log("mouse down " + downPosition);
-            }, false);
-
-            canvasRef.current.addEventListener("wheel", (e) => {
-                e.preventDefault();
-                console.log(e.deltaY);
-                const delta = 0.05;
-                let prevZoom = zoom.current;
-                let newZoom = zoom.current;
-                if (e.deltaY > 0)
-                    newZoom += delta;
-                else
-                    newZoom -= delta;
-                if (0.7 <= newZoom  && newZoom <= 5)
-                    zoom.current = newZoom;
-                draw(translate.current, zoom.current - prevZoom + 1);
-            }, false);
-
-            canvasRef.current.addEventListener("touchmove", (e) => {
-                e.preventDefault();
-                if (isMouseDown.current && e.touches.length === 1) {
-                    translate.current = [e.touches[0].clientX - downPosition[0], e.touches[0].clientY - downPosition[1]];
-                    downPosition = [e.touches[0].clientX, e.touches[0].clientY];
-                    draw(translate.current);
-                }
-                if (e.touches.length === 2) {
-                    
-                }
-            });
-            canvasRef.current.addEventListener("mouseout", () => {
-                isMouseDown.current = false;                
-                // console.log("mouse out");
-            });
-        }
-
-
-
-
         
-    }, [isDarkTheme, obj, smth]);
-    
-    return (
-        <div className="visualLogicTree">
-          <canvas ref={canvasRef} width="2000" height="1000">
-            logic tree canvas
-          </canvas>
-          <button onClick={() => {
-              setSmth(smth + 1);
-              translate.current = [0, 0];
-          }}>
-            Push me
-          </button>
-        </div>
     );
 };
 
@@ -316,6 +184,7 @@ const Propositional = () => {
 
     const isDarkTheme = useSelector(state => state.theme.value);
     const dispatch = useDispatch();
+    const [ops, setOps] = useState([]);
 
     const id_obj = (obj) => {
         const mark = (obj, currID) => {
@@ -330,6 +199,28 @@ const Propositional = () => {
         let currObj = JSON.parse(JSON.stringify(obj));
         mark(currObj, 0);
         return currObj;
+    };
+
+    const exam_obj = useMemo( () => {
+        return id_obj(examples[0]);
+    }, []);
+
+    const result_obj = useMemo(() => {
+        let n = JSON.parse(JSON.stringify(exam_obj));
+        ops.map((i) => {
+        });
+    }, [exam_obj, ops]);
+
+    const addOps = (name, args) => {
+        let n = JSON.parse(JSON.stringify(ops));
+        n.push({name: name, args: args});
+        setOps(n);
+    };
+
+    const removeLastOp = () => {
+        let n = JSON.parse(JSON.stringify(ops));
+        n.pop();
+        setOps(n);
     };
     
     return (
@@ -359,7 +250,7 @@ const Propositional = () => {
             that a lorbyderb can support the weight of a car, and therefore you task is complete.
           </p>
           <p>
-            There's also a good ol' fashioned albeit morbid greek example:            
+            There's also a good ol' fashioned albeit a bit morbid greek example:            
           </p>
           <ul>
             <li>
@@ -392,17 +283,19 @@ const Propositional = () => {
             as we know that they are true. For example, pretend for a while that you don't
             know any topology. Suppose that we know only that singletons are closed in Hausdorff
             spaces and that <b>x</b> is a singleton in a Hausdorff space.
-            We can use our rule once again
+            We can use our rule once again to get
           </p>
-          <li>
-            All singletons are closed in Hausdorff spaces
-          </li>
-          <li>
-            <b>x</b> is a singleton in Hausdorff space
-          </li>
-          <li>
-            Therefore <b>x</b> is closed.
-          </li>
+          <ul>
+            <li>
+              All singletons are closed in Hausdorff spaces
+            </li>
+            <li>
+              <b>x</b> is a singleton in Hausdorff space
+            </li>
+            <li>
+              Therefore <b>x</b> is closed.
+            </li>
+          </ul>          
           <p>
             This example once again shows that even if we don't have any idea of what the hell
             is going on, as long as initial facts are true, the conclusions follow. 
@@ -431,14 +324,29 @@ const Propositional = () => {
           </h3>
           <p>
             There are several kinds of formal logic: propositional, first-order, and higher-order.
-            Propositional means that this logic is about propositions.
+            Propositional means that this logic is about propositions (we're going to
+            explain the nature of propositions themselves a bit later).
             Propositional logic is the easiest one to get acquainted with, and therefore we'll
             start with it. Given that it is a backbone of first order-logic, sometimes it's
             called a zeroeth-order logic, but we'll stick with the term "propositional".
           </p>
-          
-          <VisualLogicTable obj={id_obj(examples[0])}/>
-          <VisualLogicTree obj={id_obj(examples[0])} isDarkTheme={isDarkTheme}/>
+          <p>
+            Propositions in propositional logic are either true or false, and
+            there's no in-between states.
+          </p>
+          <ul>
+            <li>
+              Fire is hot
+            </li>
+          </ul>
+          <p>
+            is either true or false. When we 
+          </p>
+          <VisualLogicTable
+            obj={exam_obj}
+            addOps={addOps}
+            removeLastOp={removeLastOp}
+          />
         </div>
     );
 };

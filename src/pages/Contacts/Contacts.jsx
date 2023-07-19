@@ -1,4 +1,5 @@
 import {useEffect, useState, useMemo} from 'react';
+import { Outlet, Link } from "react-router-dom";
 import links from '../../info.json';
 import "./Contacts.scss";
 
@@ -90,7 +91,7 @@ const Contacts = () => {
              <h1>About Gene (and his contacts)</h1>
              <Employment/>
              <h3>
-               Contacts
+               contacts
              </h3>
              <ul>
                <li>
@@ -140,8 +141,15 @@ const Contacts = () => {
                buckle under pressure and is always happy to help.
                List of areas of his employment is short and sweet: banking industry and freelance.
                Although Gene would've loved to provide links to his works, he can't
-               because all of them were made for internal use only.
+               because all of them were made for internal use only. On display he's got
+               miscelanious projects on his github and a couple of things on this website,
+               such as:
              </p>
+             <ul>
+               <li>
+                 <Link to='../graphBoard'>GraphBoard</Link>
+               </li>
+             </ul>
              <p>
                Semi-professionally Gene's known as the Gene of all trades. He's got experience
                with C, C++, Python, Scheme, several kinds of assembler for several
@@ -155,7 +163,7 @@ const Contacts = () => {
                Although Gene does not have any formal education (outside of being
                an <a href="/files/certificate_fthemis.pdf">Alumni of Ecole 42</a>),
                he compensates for it with a hefty amount
-               of <a href="../maths">self-education</a> (although that page represents the latest
+               of <Link to="../maths" >self-education</Link> (although that page represents the latest
                in Gene's self-education, it is not a exhaustive list).
                When Gene talks about his education, he likes to brag about the time
                when he
