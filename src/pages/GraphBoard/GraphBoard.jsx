@@ -19,7 +19,7 @@ const GraphBoard = () => {
     const maxID = useRef(0);
     const prevNode = useRef(null);
     const keyRef = useRef([]);
-    const mousePos = useRef([0, 0]);
+    const mousePos = useRef(null);
     // const mouseDownRef = useRef([0, 0]);
 
     const [mouseDownPos, setMouseDownPos] = useState(null);
@@ -47,10 +47,12 @@ const GraphBoard = () => {
     }, []);
 
     useEffect(() => {
-        callsRef.current[0]++; 
+        callsRef.current[0]++;
+        // console.log(keyPress);
         if (keyPress !== null) {
             if (keyPress === 'a') {
-                if (notColliding(graphRef.current.nodes, mousePos.current, 30)) {
+                if (mousePos.current &&
+                    notColliding(graphRef.current.nodes, mousePos.current, 30)) {
                     let currID = maxID.current;
                     maxID.current++;
                     graphRef.current.nodes.push({id: currID, pos: mousePos.current});
@@ -110,11 +112,22 @@ const GraphBoard = () => {
             f2 !== undefined 
            ) {
             let newNodes = [prevNode.current, currNode];
-            if (graphRef.current.edges.find(i => i.nodes.toString() ===
-                                            newNodes.toString()) === undefined) {
+            let curr_edge =
+                graphRef.current.edges.find(i => i.nodes.toString() === newNodes.toString());
+            if (curr_edge === undefined) {
                 let currID = maxID.current;
                 maxID.current++;
                 graphRef.current.edges.push({id: currID, nodes: newNodes});
+                setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                setCurrNode(null);
+                prevNode.current = null;
+            }
+            else {
+                let ind = graphRef.current.edges.indexOf(curr_edge);
+                if (ind >= 0) {
+                    graphRef.current.edges.splice(ind, 1);
+                    
+                }
                 setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                 setCurrNode(null);
                 prevNode.current = null;
@@ -208,8 +221,17 @@ const GraphBoard = () => {
             let len = Math.sqrt(vec[0] ** 2 + vec[1] ** 2);
             let nrm = [vec[0] / len, vec[1] / len];
             ctx.moveTo(start[0] + nrm[0] * rad, start[1] + nrm[1] * rad);
-            ctx.lineTo(end[0] - nrm[0] * rad, end[1] - nrm[1] * rad);
+            let endpos = [end[0] - nrm[0] * rad, end[1] - nrm[1] * rad];
+            ctx.lineTo(endpos[0], endpos[1]);
+            const arrowLen = rad / 2;
+            //Rotation matrix
+            ctx.lineTo(endpos[0] - (nrm[0] * 0.866 * arrowLen) - (nrm[1] * 0.5 * arrowLen) ,
+                       endpos[1] + (nrm[0] * 0.5 * arrowLen) - (nrm[1] * 0.866 * arrowLen));
+            ctx.lineTo(endpos[0] - (nrm[0] * 0.866) * arrowLen + (nrm[1] * 0.5) * arrowLen,
+                       endpos[1] - (nrm[0] * 0.5 * arrowLen) - (nrm[1] * 0.866 * arrowLen));
+            ctx.lineTo(endpos[0], endpos[1]);
             ctx.stroke();
+            ctx.fill();
         };
 
         const draw = () => {
@@ -229,7 +251,7 @@ const GraphBoard = () => {
 
             ctx.font = "14pt serif";
             // ctx.strokeText("Press 'a' to add a node, click on two nodes in succession to create a edge, press 'c' to clear", 20, 20);
-            ctx.fillText("Press 'a' to add a vertex, click on two vertices in succession to create an edge, press 'c' to clear everything", 20, 20);
+            // ctx.fillText("Press 'a' to add a vertex, click on two vertices in succession to create an edge, press 'c' to clear everything", 20, 20);
         };
 
         clearCanvas();
@@ -246,6 +268,20 @@ const GraphBoard = () => {
           <h1>
             {JSON.stringify(keyPress)}
           </h1>
+          <div className="legend">
+            <ul>
+              <li>
+                Press "a" to add a node
+              </li>
+              <li>
+                Press "c" to clear the field
+              </li>
+              <li>
+                Press on consecutive nodes to draw an edge
+              </li>            
+            </ul>
+            
+          </div>
           <canvas ref={canvasRef} width={canvasRes[0]} height={canvasRes[1]}/>
           {/* <button style={{ */}
           {/*     padding: "20px", */}
