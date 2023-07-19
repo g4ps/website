@@ -1,6 +1,6 @@
 .visualLogicTableWrapper {
     max-width: 100%;
-    overflow: scroll;
+    overflow: hidden;
 
     background: var(--logic-back);
     &::-webkit-scrollbar {

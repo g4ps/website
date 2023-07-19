@@ -108,7 +108,7 @@ const Logic = () => {
               </p>
               :
               <p>
-                No, it's not. Work is in progress, but if you're sering this message on Gene's
+                No, it's not. Work is in progress, but if you're seeing this message on Gene's
                 website, then there's still some stuff, that you can find useful and/or
               interesting. The rough outline of the progress of the books is
                 located <Link to="progress">here</Link>
