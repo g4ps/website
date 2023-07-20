@@ -83,12 +83,12 @@ const GraphBoard = () => {
         if (isMousePressed) {
             if (currNode) {
                 setTempNodeID(currNode);
-                console.log(currNode);
+                // console.log(currNode);
             }
         }
         else {
             setTempNodeID(null);
-            console.log(null);
+            // console.log(null);
         }
     }, [isMousePressed, currNode]);
 
@@ -390,18 +390,18 @@ const GraphBoard = () => {
             width={canvasRes[0]}
             height={canvasRes[1]}
           />
-          <button style={{
-              padding: "20px",
-              position: "fixed",
-              top: "0",
-              right: "40px",
-              background: "green"
-          }}
-                  onClick={() => {
-                      console.log("currToll " + callsRef.current);
-                  }}
-          >            
-          </button>
+          {/* <button style={{ */}
+          {/*     padding: "20px", */}
+          {/*     position: "fixed", */}
+          {/*     top: "0", */}
+          {/*     right: "40px", */}
+          {/*     background: "green" */}
+          {/* }} */}
+          {/*         onClick={() => { */}
+          {/*             console.log("currToll " + callsRef.current); */}
+          {/*         }} */}
+          {/* >             */}
+          {/* </button> */}
         </div>
     );
 };
