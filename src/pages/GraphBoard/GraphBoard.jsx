@@ -69,6 +69,10 @@ const GraphBoard = () => {
         return ret;
     };
 
+    useEffect(() => {
+        console.log(graph);
+    }, [graph]);
+
     const notColliding = useCallback((arr, pos, rad) => {
         for (let j = 0; j < arr.length; j++) {
             let i = arr[j];
@@ -115,6 +119,7 @@ const GraphBoard = () => {
                 graphRef.current.nodes = graphRef.current.nodes.filter(i => i.id !== currNode);
                 graphRef.current.edges = graphRef.current.edges.filter(i => i.nodes.indexOf(currNode) < 0);
                 setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                setCurrNode(null);
             }
         }
     }, [notColliding, currNode]);
@@ -123,6 +128,7 @@ const GraphBoard = () => {
         if (mouseDownPos !== null) {
             callsRef.current[1]++;
             if (currNode !== null) {
+                let k = currNode;
                 if (notColliding(graphRef.current.nodes.filter(i => i.id !== currNode), mousePos.current, rad)) {
                     graphRef.current.nodes.find(i => i.id === currNode).pos = mousePos.current;
                     setGraph(JSON.parse(JSON.stringify(graphRef.current)));
