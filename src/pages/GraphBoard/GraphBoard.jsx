@@ -121,7 +121,16 @@ const GraphBoard = () => {
 
     const mouseDownHandle = useEffect(() => {
         if (mouseDownPos !== null) {
-            callsRef.current[1]++; 
+            callsRef.current[1]++;
+            if (currNode !== null) {
+                if (notColliding(graphRef.current.nodes.filter(i => i.id !== currNode), mousePos.current, rad)) {
+                    graphRef.current.nodes.find(i => i.id === currNode).pos = mousePos.current;
+                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                    setCurrNode(null);
+                    setMouseDownPos(null);
+                    return ;
+                }
+            }
             let set = false;
             for (let i = 0; i < graph?.nodes?.length; i++) {
                 let j = graph?.nodes[i];
@@ -131,12 +140,13 @@ const GraphBoard = () => {
                     set = true;
                 }
             }
-            if (!set)
+            if (!set) {
                 setCurrNode(null);
+            }
             setMouseDownPos(null);
 
         }
-    }, [mouseDownPos, graph]);
+    }, [currNode, mouseDownPos, graph]);
 
     useEffect(() => {
         callsRef.current[2]++; 
@@ -322,26 +332,27 @@ const GraphBoard = () => {
             ctx.fillStyle = stroke_color;
         };
 
-
-
-
-
         const draw = () => {            
             graph?.nodes?.forEach((i => {
-                // if (currNode === i.id) {
-                //     ctx.strokeStyle = "blue";
-                // }
-                // drawCirc(i.pos, 30);
-                // ctx.strokeStyle = stroke_color;
-                if (currNode !== i.id) {
-                    drawCirc(ctx, i.pos, 30);
+                if (currNode === i.id) {
+                    ctx.save();
+                    ctx.setLineDash([5, 5]);
+                }
+                drawCirc(ctx, i.pos, 30);
+                if (currNode === i.id) {
+                    ctx.restore();
                 }
             }));
             graph?.edges.forEach((i) => {
-                if (currNode === null || i.nodes.indexOf(currNode) < 0) {
-                    let st = graph?.nodes?.find(j => j.id === i.nodes[0]).pos;
-                    let end = graph?.nodes?.find(j => j.id === i.nodes[1]).pos;
-                    drawEdge(ctx, st, end);
+                if (i.nodes.indexOf(currNode) >= 0) {
+                    ctx.save();
+                    ctx.setLineDash([5, 5]);                    
+                }
+                let st = graph?.nodes?.find(j => j.id === i.nodes[0]).pos;
+                let end = graph?.nodes?.find(j => j.id === i.nodes[1]).pos;
+                drawEdge(ctx, st, end);
+                if (i.nodes.indexOf(currNode) >= 0) {
+                    ctx.restore();
                 }
             });
         };
