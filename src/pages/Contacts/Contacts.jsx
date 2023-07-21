@@ -91,7 +91,7 @@ const Contacts = () => {
              <h1>About Gene (and his contacts)</h1>
              <Employment/>
              <h3>
-               contacts
+               Contacts
              </h3>
              <ul>
                <li>
