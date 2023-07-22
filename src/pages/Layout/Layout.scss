@@ -7,9 +7,19 @@
     width: 100%;
     flex-direction: column;
     align-items: center;
+
+}
+
+.eaegg {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    font-size: 9pt;
+    opacity: 0.02;
 }
 
 .layout nav {
+    user-select: none;
     width: 100%;
     display: flex;
     justify-content: space-between;

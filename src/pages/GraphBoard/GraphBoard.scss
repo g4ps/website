@@ -22,3 +22,12 @@
 
     }
 }
+
+.debugButton {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 20px;
+    z-index: 3;
+    background: lightgreen;
+}
