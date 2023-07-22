@@ -29,6 +29,9 @@ const Layout = ({
             </nav>
             <Outlet/>
           </div>
+          <div className="eaegg">
+            Howdy
+          </div>
         </div>
     );
 };

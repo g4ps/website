@@ -1,5 +1,5 @@
 import {useEffect, useState, useMemo} from 'react';
-import { Outlet, Link } from "react-router-dom";
+import {Link} from "react-router-dom";
 import links from '../../info.json';
 import "./Contacts.scss";
 
