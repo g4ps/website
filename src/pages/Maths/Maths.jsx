@@ -168,14 +168,16 @@ const Maths = () => {
              <header>
                <h1>Gene's doing maths (and CS related things)</h1>
                <p>
-                 When I've got free time I usualy do maths (or something CS-related).
-                 My studies are partitioned into courses, and each course is based on a book.
+                 When Gene got free time he usualy does maths (or something CS-related).
+                 His studies are partitioned into courses, and each course is based on a book.
                  Each course is either finished, in progress, or in a semi-permanent hiatus. 
-                 Solutions for (some of) the exercies in the books are scrupulously written down, and presented for your viewing pleasure.
+                 Solutions for (some of) the exercies in the books are scrupulously
+                 written down, and presented for your viewing pleasure.
                </p>
                <p>
-                 Given that no one on the God's green earth (except for me) has seen or read
-                 any of those solutions, it goes without saying that they are riddled with errors.
+                 Given that no one on the God's green earth (except for the Mighty Gene himself)
+                 has seen or read any of those solutions, it goes without saying that they
+                 are riddled with errors.
                </p>
                <p>
                  This page has a related <a href={links.exercises}>github repository</a>. If those
