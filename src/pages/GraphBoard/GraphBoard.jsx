@@ -29,7 +29,7 @@ const detectMob = () =>  {
     return toMatch.some((toMatchItem) => {
         return navigator.userAgent.match(toMatchItem);
     });
-}
+};
 
 const sq_norm = (vec) => {
     let ret = 0;
@@ -37,19 +37,7 @@ const sq_norm = (vec) => {
     return ret;
 };
 
-// const movingHandling = (ctx, currentOffc, screenOffc) => {
-//     if (currentOffc.current.toString() !== screenOffc.toString()) {
-//         let k = currentOffc.current;
-//         let j = screenOffc;
-//         let ret = screenOffc.slice(0);
-//         let diff = [screenOffc[0] - currentOffc.current[0],
-//                     screenOffc[1] - currentOffc.current[1]];
-//         ctx.translate(-diff[0], diff[1]);
-//     }
-// };
-
 const drawCirc = (ctx, start, rad = 30) => {
-    // debugger;
     ctx.beginPath();
     ctx.arc(start[0], start[1], rad, 0, Math.PI * 2, true); // Outer circle
     ctx.stroke();
@@ -61,7 +49,6 @@ const drawAxis = (ctx, bound, convert) => {
     ctx.lineWidth = 5;
     let ox = [convert([bound[0][0], 0]), convert([bound[0][1], 0])];
     let oy = [convert([0, bound[1][0]]), convert([0, bound[1][1]])];
-    // debugger;
     ctx.beginPath();
     ctx.moveTo(ox[0][0], ox[0][1]);
     ctx.lineTo(ox[1][0], ox[1][1]);
@@ -84,7 +71,6 @@ const drawFieldBox = (ctx, bound, convert) => {
         [convert([bound[0][0], bound[1][1]]), convert([bound[0][0], bound[1][0]])],
         [convert([bound[0][1], bound[1][1]]), convert([bound[0][1], bound[1][0]])],
     ];
-    // debugger;
     for (let i = 0; i < lines.length; i++) {
         ctx.beginPath();
         ctx.moveTo(lines[i][0][0], lines[i][0][1]);
@@ -141,12 +127,12 @@ const GraphBoard = () => {
     const maxID = useRef(0);
     const prevNode = useRef(null);
     const ctrlDown = useRef(false);
+    const shftDown = useRef(false);
     const keyRef = useRef([]);
     const mousePos = useRef(null);
     // const currentOffc = useRef([0, 0]);
     const fieldMouseRef = useRef([0, 0]);
     const [mousePosState, setMousePosState] = useState(null);
-    const [mouseDownPos, setMouseDownPos] = useState(null);
     
     const [isMousePressed, setIsMousePressed] = useState(false);
     
@@ -324,9 +310,6 @@ const GraphBoard = () => {
         if (key === "s") {
             console.log(screenOffc);
         }
-        // if (key === "u") {
-        //     scaleOnPoint(0.1, [0, 792]);
-        // }
         if (key === "i") {
             scaleOnPoint(0.2, [400, 400]);
         }
@@ -334,42 +317,36 @@ const GraphBoard = () => {
         clearEverything, deleteNode,
         scale, screenOffc, changeScale, scaleOnPoint]); 
 
-    
-
-    useEffect(() => {
-        //handling of proper mouse events; TODO: make this thing a function
-        if (mouseDownPos !== null) {
-            if (currNode !== null) {
-                if (notColliding(graphRef.current.nodes.filter(i => i.id !== currNode), fieldMouseRef.current, rad)) {
-                    graphRef.current.nodes.find(i => i.id === currNode).pos = fieldMouseRef.current;
-                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
-                    setCurrNode(null);
-                    setMouseDownPos(null);
-                    return ;
-                }
-            }
-            let set = false;
-
-            for (let i = 0; i < graph?.nodes?.length; i++) {
-                let j = graph?.nodes[i];
-                let k = canvasToField(mouseDownPos);
-                if (sq_norm([j.pos[0] - k[0], j.pos[1] - k[1]]) <
-                    rad ** 2) {
-                    setCurrNode(j.id);
-                    set = true;
-                }
-            }
-            if (!set) {
+    const handleMousePress = useCallback((mdp) => {
+        if (currNode !== null) {
+            if (notColliding(graphRef.current.nodes.filter(i => i.id !== currNode),
+                             fieldMouseRef.current, rad)) {
+                graphRef.current.nodes.find(i => i.id === currNode).pos = fieldMouseRef.current;
+                setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                 setCurrNode(null);
+                return ;
             }
-            setMouseDownPos(null);
         }
-    }, [currNode, mouseDownPos, graph, canvasToField]);
+        let set = false;
+
+        for (let i = 0; i < graph?.nodes?.length; i++) {
+            let j = graph?.nodes[i];
+            let k = canvasToField(mdp);
+            if (sq_norm([j.pos[0] - k[0], j.pos[1] - k[1]]) <
+                rad ** 2) {
+                setCurrNode(j.id);
+                set = true;
+            }            
+        }
+        if (!set) {
+            setCurrNode(null);
+        }
+        // setMouseDownPos(null);
+    }, [currNode, canvasToField, graph]);
 
 
     useEffect(() => {
-        //handling of change of current node ID. Used for selecting, drawing and whatnot
-        //TODO: consider making this a proper function.
+        // handling of change of current node ID. Used for selecting, drawing and whatnot
         if (currNode === null) {
             prevNode.current = null;
             return ;
@@ -447,18 +424,16 @@ const GraphBoard = () => {
         };
 
         const onMouseDown = (e) => {
-            setMouseDownPos([e.offsetX, e.offsetY]);
+            handleMousePress([e.offsetX, e.offsetY]);
             setIsMousePressed(true);
         };
 
         const onMouseUp = (e) => {
             setIsMousePressed(false);
-            setMouseDownPos(null);
         };
 
         const onMouseOut = (e) => {
             setIsMousePressed(false);
-            setMouseDownPos(null);
         };
 
         const onWheel = (e) => {
@@ -492,7 +467,8 @@ const GraphBoard = () => {
             canvas.removeEventListener("mouseout", onMouseOut);
             canvas.removeEventListener("wheel", onWheel);
         };
-    }, [keyPressHandle, canvasRes, scaleOnPoint, changeScreenOffc, scale]);
+    }, [keyPressHandle, canvasRes, scaleOnPoint,
+        changeScreenOffc, scale, handleMousePress]);
 
 
     // There're two canvases: one on top with all the moving stuff, and one underlying
@@ -512,7 +488,6 @@ const GraphBoard = () => {
             ctx.strokeStyle = stroke_color;
             ctx.fillStyle = "transparent";
             ctx.fillRect(-1000000, -100000, 150000000, 150000000);
-            // movingHandling(ctx, currentOffc, screenOffc);
         };
 
         const draw = () => {
