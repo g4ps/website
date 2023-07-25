@@ -3,6 +3,9 @@ import { useSelector } from 'react-redux';
 import Slider from '../../components/Slider/Slider.jsx';
 import './GraphBoard.scss';
 
+// Disclamer: vast majority of the stuff that's going
+// on here was half-assed and was done for pure fun. 
+
 const rad = 15;
 
 //checks whether the current position is at least rad away (heh) from any node in arr
@@ -240,7 +243,7 @@ const GraphBoard = () => {
             // graph, into which all the other nodes lead
             // (i.e. top dog is a node out which nothing sticks out).
             //I'm pretty sure that there's alrady a more appropriate name for it,
-            //but I'm too ignorant to do anything with it
+            //but I'm too ignorant to care
             let na = arr.filter(i => {
                 return graph.edges.find(j => j.nodes[0] === i ) === undefined;
             });
@@ -250,18 +253,80 @@ const GraphBoard = () => {
     }, [connectedNodes]);
 
     const dawgToObj = useCallback((dawg, connected, graph) => {
+        // TODO: test the ever-living shit out of this thing for now
+        // TODO: improve performance
         if (dawg.length !== 1)
             return null;
 
         //Get the dawgs under the main dawg
-        const subdawgs = graph.edges.map(i => i.nodes[1] === dawg[0] ? i.nodes[0] : null)
-              .filter(i => i !== null);
+        let subdawgs =
+            // all edges, that connect to dawg
+            graph.edges.map(i => i.nodes[1] === dawg[0] ? i.nodes[0] : null)        
+            .filter(i => i !== null) // removing nulls from the last step (TODO: improve)
+            .filter(i => connected.indexOf(i) >= 0); // removing unnecessary nodes (for recursion)
+
+        //get the edges that go out of subdawgs
+        const outDawgEdges = graph.edges.filter(i => subdawgs
+                                                .indexOf(i.nodes[0]) >= 0);
+
+        //edges out of subdawgs should only go to another subdawg or the dawg
+        if (outDawgEdges.find(i => subdawgs.concat(dawg).indexOf(i.nodes[1]) < 0)) {
+            //and if they don't, return appropriate result
+            return null;
+        }
         
-        return subdawgs;
+        const interSubDawgEdges = outDawgEdges.filter(i => subdawgs.indexOf(i.nodes[0]) >= 0 &&
+                                                  subdawgs.indexOf(i.nodes[1]) >= 0 );
+
+        // between the subdawgs, either everyone talks and does it in orderly fashion
+        // (i.e. in a list), or no one talks
+        if (interSubDawgEdges !== undefined && interSubDawgEdges.length !== 0) {
+            //TODO: go through this thing and verify correctness
+            if (interSubDawgEdges.length !== subdawgs.length - 1)
+                return null;
+            let fstSubDawg = subdawgs.filter(i =>
+                interSubDawgEdges.filter(j => j.nodes[1] === i).length === 0);
+            if (fstSubDawg.length !== 1)
+                return null;
+            fstSubDawg = fstSubDawg[0];
+            let order = [fstSubDawg];
+            while(order.length !== subdawgs.length) {
+                // debugger;
+                let nextDawg = order[order.length - 1];
+                let talksTo = interSubDawgEdges.filter(i => i.nodes[0] === nextDawg);
+                if (talksTo.length === 0 && order.length !== subdawgs - 1)
+                    return null;
+                if (talksTo.length > 1 || order.indexOf(talksTo[0].nodes[1]) >= 0)
+                    return null;
+                order.push(talksTo[0].nodes[1]);
+            }
+            subdawgs = order;
+        }
+
+        let args = [];
+
+        connected = connected.filter(i => subdawgs.indexOf(i) < 0);
+        for (let i = 0; i < subdawgs.length; i++) {
+            let sbdObj = dawgToObj([subdawgs[i]], connected, graph);
+            if (sbdObj === null)
+                return null; //TODO: add exceptions and more descriptive errors
+            args.push(sbdObj);
+        }               
+        
+        return {
+            id: dawg[0],
+            args: args
+        };
     }, []);
 
     const graphToObj = useMemo(() => {
-        return topDogs.map((i, pos) => dawgToObj(i, connectedNodes[pos], graph));
+        try {
+            return topDogs.map((i, pos) => dawgToObj(i, connectedNodes[pos], graph));
+        }
+        catch(e) {
+            return "ERROR";
+        }
+        
     }, [topDogs, connectedNodes, dawgToObj]);
     
     const canvasFOV = useMemo(() => {
