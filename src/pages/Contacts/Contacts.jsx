@@ -95,7 +95,7 @@ const Contacts = () => {
              </h3>
              <ul>
                <li>
-                 <a href={"mailto://" + links.mail}>E-mail</a> (preferred method of communication)
+                 <a href={"mailto:" + links.mail}>E-mail</a> (preferred method of communication)
                </li>
                <li>
                  <a href={links.telegram}>Telegram</a> 
