@@ -24,7 +24,7 @@ const App = () =>  {
         else {
             dispatch(makeLight());
         }
-    }
+    };
 
     useEffect(() => {
         //setting proper variables to proper

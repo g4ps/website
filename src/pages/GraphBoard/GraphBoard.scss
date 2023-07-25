@@ -21,6 +21,12 @@
 	}
 
     }
+    .slideControl {
+	position: fixed;
+	z-index: 3;
+	right: 6px;
+	top: 80px;
+    }
 }
 
 .debugButton {
@@ -30,4 +36,17 @@
     padding: 20px;
     z-index: 3;
     background: lightgreen;
+}
+
+.debugInfo {
+    font-family: Courier new;
+    position: fixed;    
+    background: grey;
+    border: 1px solid var(--text-color);
+    box-sizing: border-box;
+    bottom: 0px;
+    left: 0;
+    width: 100vw;
+    height: 200px;
+    z-index: 3;
 }

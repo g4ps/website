@@ -1,9 +1,11 @@
 import {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import { useSelector } from 'react-redux';
+import Slider from '../../components/Slider/Slider.jsx';
 import './GraphBoard.scss';
 
 const rad = 15;
 
+//checks whether the current position is at least rad away (heh) from any node in arr
 const notColliding = (arr, pos, rad) => {
     for (let j = 0; j < arr.length; j++) {
         let i = arr[j];
@@ -11,6 +13,11 @@ const notColliding = (arr, pos, rad) => {
             return false;
     }
     return true;
+};
+
+//basic check on whether the edge is touching any elements of array
+const isTouching = (edg, idArr) => {
+    return idArr.indexOf(edg[0]) >= 0 || idArr.indexOf(edg[1]) >= 0;            
 };
 
 const detectMob = () =>  {
@@ -31,6 +38,7 @@ const detectMob = () =>  {
     });
 };
 
+//Square of a eucledian norm;
 const sq_norm = (vec) => {
     let ret = 0;
     vec.map(i => ret += i ** 2);
@@ -89,9 +97,8 @@ const drawEdge = (ctx, start, end, rad=30) => {
     let endpos = [end[0] - nrm[0] * rad, end[1] - nrm[1] * rad];
     ctx.lineTo(endpos[0], endpos[1]);
     const arrowLen = rad / 3;
-    //Here we essentially use a 2D rotation matrix to draw arrows.
+    //Here we implicitly use a 2D rotation matrix to draw arrows.
     //For explanation go to wiki or any good linear algebra book
-
     const cst = 0.8660254037844387;
     ctx.stroke();
     ctx.beginPath();
@@ -109,29 +116,50 @@ const drawEdge = (ctx, start, end, rad=30) => {
 
 const GraphBoard = () => {
 
+    //TODO:
+    // - move legend into a more appropriate element
+    // - add a mini-map
+    // - add object handling
+    // - add panning
+    // - add selection of a group of nodes
+
     const isDarkTheme = useSelector(state => state.theme.value);
+    
     const back_color = isDarkTheme ? "#444" : "#eee";
     const stroke_color = isDarkTheme ? "white" : "#444";
 
+    //This things is used in zoom calculations
     const wheelSensetivity = 0.0007;
-    
+
+    //References for both canvases
     const canvasRef = useRef(null);
     const canvasOverRef = useRef(null);
 
+    //Debugging thingy
     const testRef = useRef([0, 0, 0]);
 
+    //doubles the graph state variable; redundant maybe is redundant
     const graphRef = useRef({
         nodes: [],
         edges: []
     });
-    const maxID = useRef(0);
-    const prevNode = useRef(null);
+    
+    const maxID = useRef(0); //current maximal ID for a node and/or edge
+    const prevNode = useRef(null); //revious value of currNode
+    
+    //Those two variables probably need to unite into something beautiful
     const ctrlDown = useRef(false);
     const shftDown = useRef(false);
+
+    //Unused as of now; may have some usability later
+    const isDirectional = useRef(true);
+    
     const keyRef = useRef([]);
     const mousePos = useRef(null);
-    // const currentOffc = useRef([0, 0]);
+
+    //current position of the mouse with relation to the field; has doubling state variable
     const fieldMouseRef = useRef([0, 0]);
+    
     const [mousePosState, setMousePosState] = useState(null);
     
     const [isMousePressed, setIsMousePressed] = useState(false);
@@ -143,24 +171,98 @@ const GraphBoard = () => {
     const [keyPress, setKeyPress] = useState([]);
     const [graph, setGraph] = useState(null);
 
-    const [scale, setScale] = useState(1.0);
+    const [scale, setScale] = useState(1.0); //current scale
 
     const [screenOffc, setScreenOffc] = useState([0, 0]); //left down corner of the canvas
 
     //Sets an invevrval for OX and OY, for which the field is defined
     const fieldSize = useMemo(() => [[-5000, 5000], [-5000, 5000]], []);
 
+    const maxScale = 8;
+    const minScale = 0.3;
+
     const changeScale = useCallback((ds) => {
-        // Bound for the scale; sets the value in interval [0.3, 8]
+        // Bound for the scale; sets the value in interval [minScale, maxScale]
+        // BTW there's no check on sanity of the scale boundaries, so beware.
         let newScale = ds + scale;
-        newScale = Math.max(Math.min(8, newScale), 0.3);
+        newScale = Math.max(Math.min(maxScale, newScale), minScale);
         setScale(newScale);
         return newScale - scale;
     }, [scale]);
 
     const isMobile = useMemo(() => {
+        // take a guess on what does this thing do
         return detectMob();        
     }, []);
+
+    const connectedNodes = useMemo(() => {
+        // Returns array of arrays of connected nodes
+        // Probably runs in a square, or mamybe even worse
+        // Works for now; TODO: make this thing better
+        if (graph === null)
+            return [];
+        let nodes = graph.nodes.slice();
+        let edges = graph.edges.slice();
+        let ret = [];        
+        while(nodes.length !== 0) {
+            let tmp = [nodes[0].id];
+            let set = true;
+            while (set) {
+                set = false;
+                let nextEdges = [];
+                let connections = [];
+                edges.forEach((i) => {
+                    if (isTouching(i.nodes, tmp)) {
+                        set = true;
+                        connections.push(i);
+                    }
+                    else {
+                        nextEdges.push(i);
+                    }
+                });
+                edges = nextEdges;
+                connections.forEach(i => {
+                    if (tmp.indexOf(i.nodes[0]) < 0)
+                        tmp.push(i.nodes[0]);
+                    if (tmp.indexOf(i.nodes[1]) < 0)
+                        tmp.push(i.nodes[1]);
+                });
+                nodes = nodes.filter(i => tmp.indexOf(i.id) < 0);
+            }
+            ret.push(tmp);
+        }        
+        return ret;        
+    }, [graph]);
+
+    const topDogs = useMemo(() => {
+        const getTopDog = (arr, graph) => {
+            //Top dog is my name for a node in a connected directed
+            // graph, into which all the other nodes lead
+            // (i.e. top dog is a node out which nothing sticks out).
+            //I'm pretty sure that there's alrady a more appropriate name for it,
+            //but I'm too ignorant to do anything with it
+            let na = arr.filter(i => {
+                return graph.edges.find(j => j.nodes[0] === i ) === undefined;
+            });
+            return na;
+        };
+        return connectedNodes.map(i => getTopDog(i, graph));
+    }, [connectedNodes]);
+
+    const dawgToObj = useCallback((dawg, connected, graph) => {
+        if (dawg.length !== 1)
+            return null;
+
+        //Get the dawgs under the main dawg
+        const subdawgs = graph.edges.map(i => i.nodes[1] === dawg[0] ? i.nodes[0] : null)
+              .filter(i => i !== null);
+        
+        return subdawgs;
+    }, []);
+
+    const graphToObj = useMemo(() => {
+        return topDogs.map((i, pos) => dawgToObj(i, connectedNodes[pos], graph));
+    }, [topDogs, connectedNodes, dawgToObj]);
     
     const canvasFOV = useMemo(() => {
         return [canvasRes[0] / scale, canvasRes[1] / scale];
@@ -233,29 +335,6 @@ const GraphBoard = () => {
         };
         setGraph(JSON.parse(JSON.stringify(graphRef.current)));
         setCurrNode(null);
-
-        //////////////////////////////////////////////////////////////////////
-        // Reference points for scaling and whatnot (debug)
-        //////////////////////////////////////////////////////////////////////
-        // for (let i = 1; i <= 8; i *= 2) {
-        //     addNode([0, Math.floor(canvasRes[1] / i)]);
-        // }
-        // for (let i = 1; i <= 8; i *= 2) {
-        //     addNode([Math.floor(canvasRes[0] / i), 0]);
-        // }
-        // addNode([400, 400]);
-        // addNode([0, canvasRes[1] / 2]);
-        // addNode([canvasRes[0] / 2, 0]);
-        // addNode([canvasRes[0] / 4, 0]);
-        // addNode([canvasRes[0] / 4 * 3, 0]);
-        // addNode([canvasRes[0] / 6 * 2, 0]);
-        // addNode([canvasRes[0] / 6 * 4, 0]);
-        // addNode([canvasRes[0] / 2, 100]);
-        // addNode([canvasRes[0] / 4, 100]);
-        // addNode([canvasRes[0] / 4 * 3, 100]);
-        // addNode([canvasRes[0] / 6 * 2, 100]);
-        // addNode([canvasRes[0] / 6 * 4, 100]); 
-        // addNode([canvasRes[0] / 1.6, 0]);
     }, []); 
 
 
@@ -279,6 +358,10 @@ const GraphBoard = () => {
         }
         if (key === 'c') {
             clearEverything();
+        }
+        if (key === 'r') {
+            setScale(1);
+            setScreenOffc([0, 0]);
         }
         if (key === 'd' || key === 'delete') {
             if (currNode !== null) {
@@ -366,6 +449,9 @@ const GraphBoard = () => {
                 let currID = maxID.current;
                 maxID.current++;
                 graphRef.current.edges.push({id: currID, nodes: newNodes});
+                if (!isDirectional.current) {
+                    graphRef.current.edges.push({id: currID, nodes: [newNodes[1], newNodes[0]]});
+                }
                 setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                 setCurrNode(null);
                 prevNode.current = null;
@@ -470,10 +556,6 @@ const GraphBoard = () => {
     }, [keyPressHandle, canvasRes, scaleOnPoint,
         changeScreenOffc, scale, handleMousePress]);
 
-
-    // There're two canvases: one on top with all the moving stuff, and one underlying
-    // with (somewhat) static image. Split is used for optimization purposes
-
     useEffect(() => {
         //Higher canvas handling        
         const canvas = canvasOverRef.current;
@@ -525,9 +607,24 @@ const GraphBoard = () => {
     }, [graph, fieldMousePos, currNode, screenOffc,
         fieldToCanvas, stroke_color, canvasRes, scale]);
 
+    // useEffect(() => {
+    //     const canvas = canvasRef.current;
+    //     if (!canvas)
+    //         return ;
+    //     const ctx = canvas.getContext("2d");
+    //     if (!ctx)
+    //         return ;
+    //     ctx.translate(0, -canvasRes[1] * (scale - 1));
+    //     ctx.scale(scale, scale);
+    // }, []);
+
     useEffect(() => {
         //Underlying canvas handling
         
+        // TODO: pretty sure that there's a way to reduce (or elminate) re-drawing
+        // of underlying canvas during scaling and transitions. Given the fact
+        // that right now it works borderline flawlessly, the task of making
+        // optimizations is left for better times
         const canvas = canvasRef.current;
         if (!canvas)
             return ;
@@ -546,8 +643,7 @@ const GraphBoard = () => {
         };
 
         const draw = () => {
-            clearCanvas();
-            
+            clearCanvas();           
             ctx.translate(0, -canvasRes[1] * (scale - 1));
             ctx.scale(scale, scale);
             testRef.current[2]++;
@@ -558,7 +654,13 @@ const GraphBoard = () => {
                     ctx.save();
                     ctx.setLineDash([3, 3]);
                 }
-                drawCirc(ctx, fieldToCanvas(i.pos), rad);
+                let cnpos = fieldToCanvas(i.pos);
+                //////////////////////////////////////////////////////////////////////
+                //Debugging option
+                ctx.font = "8pt Courier new";
+                ctx.fillText(i.id, cnpos[0], cnpos[1]);
+                //////////////////////////////////////////////////////////////////////
+                drawCirc(ctx, cnpos, rad);
                 if (currNode === i.id) {
                     ctx.restore();
                 }
@@ -604,6 +706,9 @@ const GraphBoard = () => {
                    Press "c" to clear the field
                  </li>
                  <li>
+                   Press "r" to reset the view
+                 </li>
+                 <li>
                    Press on a node and then press "d" to delete the node
                  </li>
                  <li>
@@ -621,10 +726,34 @@ const GraphBoard = () => {
                width={canvasRes[0]}
                height={canvasRes[1]}
              />
+             <div className="zoom">
+               
+             </div>
+             <div className="slideControl">
+               <Slider
+                 min={minScale}
+                 max={maxScale}
+                 value={scale}
+               />
+             </div>
+             <div className="debugInfo">
+               <div>
+                 {`current node ID: ${currNode === null ? "none" : currNode}`}
+               </div>
+               <div>
+                 {`connected graphs: ${JSON.stringify(connectedNodes)}`}
+               </div>
+               <div>
+                 {`topDogs: ${JSON.stringify(topDogs)}`}
+               </div>
+               <div>
+                 {`graphToObj: ${JSON.stringify(graphToObj)}`}
+               </div>
+             </div>
            </>
           }
         </div>
-            );
+          );
     };
 
     export default GraphBoard;
