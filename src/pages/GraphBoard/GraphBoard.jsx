@@ -3,14 +3,92 @@ import { useSelector } from 'react-redux';
 import Slider from '../../components/Slider/Slider.jsx';
 import './GraphBoard.scss';
 import {notColliding, isTouching, detectMob,
-        sq_norm, drawCirc, drawAxis, drawFieldBox, drawEdge} from './auxFunctions.jsx';
+        sq_norm, drawCirc, drawAxis, drawFieldBox, drawEdge, uniq} from './auxFunctions.jsx';
 
 // Disclamer: vast majority of the stuff that's going
 // on here was half-assed and was done purely for fun
 
 // TODO: split this thing into several managable pieces
 
-const rad = 15;
+const rad = 30;
+
+const inferencesArr = [
+    {
+        symb: "MP",
+    },
+    {
+        symb: "MT",
+    },
+    {
+        symb: "CD",
+    },
+    {
+        symb: "DD",
+    },
+    {
+        symb: "DS",
+    },
+    {
+        symb: "HS",
+    },
+    {
+        symb: "CJ",
+    },
+    {
+        symb: "SM",
+    },
+    {
+        symb: "AD",
+    },    
+];
+
+const operationsArr = [
+    {
+        op: "and",
+        symb: "\u2227"
+    },
+    {
+        op: "or",
+        symb: "\u2228"
+    },
+    {
+        op: "not",
+        symb: "\u00ac"
+    },
+    {
+        op: "imp",
+        symb: "\u21d2"
+    },
+    {
+        op: "eqv",
+        symb: "\u2194"
+    },
+    {
+        op: "",
+        symb: "CLR"
+    },
+    {
+        op: {var: "P"},
+        symb: "P"
+    },
+    {
+        op: {var: "Q"},
+        symb: "Q"
+    },
+    {
+        op: {var: "R"},
+        symb: "R"
+    },
+    {
+        op: {var: "S"},
+        symb: "S"
+    },
+];
+
+const opToSymb = (str) => {
+    return operationsArr.find(i => i.op === str ||
+                              (i.op.var !== undefined && i.op.var === str.var))?.symb;
+};
 
 const GraphBoard = () => {
 
@@ -47,10 +125,10 @@ const GraphBoard = () => {
     
     //Those two variables probably need to unite into something beautiful
     const ctrlDown = useRef(false);
-    const shftDown = useRef(false);
+    const shiftDown = useRef(false);
 
     //LOGIC: selection of node marker
-    const nodeMarker = useRef(false);
+    const nodeMarker = useRef(null); //this thing probably needs to be a state variable
 
     //Unused as of now; may have some usability later
     const isDirectional = useRef(true);
@@ -75,28 +153,15 @@ const GraphBoard = () => {
     const [scale, setScale] = useState(1.0); //current scale
     const [testState, setTestState] = useState(0);
 
+    const [selected, setSelected] = useState([]);
+
     const [screenOffc, setScreenOffc] = useState([0, 0]); //left down corner of the canvas
 
     //Sets an invevrval for OX and OY, for which the field is defined
     const fieldSize = useMemo(() => [[-5000, 5000], [-5000, 5000]], []);
 
     const maxScale = 8;
-    const minScale = 0.3;
-
-    const buttonsArr = [
-        {
-            op: "and",            
-        },
-        {
-            op: "or",            
-        },
-        {
-            op: "not",            
-        },
-        {
-            op: "imp",            
-        },
-    ];
+    const minScale = 0.3;    
 
     const changeScale = useCallback((ds) => {
         // Bound for the scale; sets the value in interval [minScale, maxScale]
@@ -169,6 +234,7 @@ const GraphBoard = () => {
     const dawgToObj = useCallback((dawg, connected, graph) => {
         // TODO: test the ever-living shit out of this thing for now
         // TODO: improve performance
+        let explicitDirection = false;
         if (dawg.length !== 1)
             return null;
 
@@ -196,6 +262,7 @@ const GraphBoard = () => {
         // (i.e. in a list), or no one talks
         if (interSubDawgEdges !== undefined && interSubDawgEdges.length !== 0) {
             //TODO: go through this thing and verify correctness
+            explicitDirection = true;
             if (interSubDawgEdges.length !== subdawgs.length - 1)
                 return null;
             let fstSubDawg = subdawgs.filter(i =>
@@ -229,7 +296,9 @@ const GraphBoard = () => {
         
         return {
             id: dawg[0],
-            args: args
+            kind: graph.nodes.find(i => i.id === dawg[0]).kind, //TODO: make it better
+            explicitDirection: explicitDirection,
+            args: args,            
         };
     }, []);
 
@@ -242,6 +311,43 @@ const GraphBoard = () => {
         }
         
     }, [topDogs, connectedNodes, dawgToObj]);
+
+    const isLogicalObjectValid = useCallback((obj) => {
+        if (obj === null)
+            return false;
+        if (obj.length === 0)
+            return true;
+        else if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i++) {
+                if (!isLogicalObjectValid(obj[i]))
+                    return false;
+            }
+            return true;
+        }
+        else if (obj.kind === "and" || obj.kind === "or" || obj.kind === "eqv") {
+            return isLogicalObjectValid(obj.args);
+        }
+        else if (obj.kind === "imp") {
+            if (obj.explicitDirection && obj.args.length === 2) {
+                return isLogicalObjectValid(obj.args);                
+            }
+        }
+        else if (obj.kind === "not" ) {
+            if (obj.args.length === 1)
+                return isLogicalObjectValid(obj.args);
+        }
+        else if (!obj.kind) {
+            return false;
+        }
+        else if (obj.kind.var) {            
+            return obj.args.length === 0;
+        }
+        return false;
+    }, []);
+
+    const isObjectValid = useMemo(() => {
+        return isLogicalObjectValid(graphToObj);
+    }, [graphToObj]);
     
     const canvasFOV = useMemo(() => {
         return [canvasRes[0] / scale, canvasRes[1] / scale];
@@ -303,7 +409,7 @@ const GraphBoard = () => {
     const addNode = useCallback((pos) => {
         let currID = maxID.current;
         maxID.current++;
-        graphRef.current.nodes.push({id: currID, pos: pos});
+        graphRef.current.nodes.push({id: currID, pos: pos, kind: nodeMarker.current});
         setGraph(JSON.parse(JSON.stringify(graphRef.current)));        
     }, []);
 
@@ -343,7 +449,9 @@ const GraphBoard = () => {
         if (key === 'd' || key === 'delete') {
             if (currNode !== null) {
                 deleteNode(currNode);
+
             }
+            selected.map(i => deleteNode(i));
         }
         //Debug and whatnot 
         if (key === "arrowup") {
@@ -375,7 +483,7 @@ const GraphBoard = () => {
         }
     }, [currNode, changeScreenOffc, addNode,
         clearEverything, deleteNode,
-        scale, screenOffc, changeScale, scaleOnPoint]); 
+        scale, screenOffc, changeScale, scaleOnPoint, selected]); 
 
     const handleMousePress = useCallback((mdp) => {
         if (currNode !== null) {
@@ -394,15 +502,29 @@ const GraphBoard = () => {
             let k = canvasToField(mdp);
             if (sq_norm([j.pos[0] - k[0], j.pos[1] - k[1]]) <
                 rad ** 2) {
-                setCurrNode(j.id);
-                set = true;
+                if (nodeMarker.current !== null) {
+                    graphRef.current.nodes.find(k => k.id === j.id).kind =
+                        JSON.parse(JSON.stringify(nodeMarker.current));
+                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                    nodeMarker.current = null;
+                }
+                else if (shiftDown.current) {
+                    setSelected(uniq([...selected, j.id]));
+                }
+                else {
+                    setCurrNode(j.id);
+                    set = true;
+                }
             }            
         }
         if (!set) {
+            nodeMarker.current = null;
+            if (!shiftDown.current)
+                setSelected([]);
             setCurrNode(null);
         }
         // setMouseDownPos(null);
-    }, [currNode, canvasToField, graph]);
+    }, [currNode, canvasToField, graph, selected]);
 
 
     useEffect(() => {
@@ -469,6 +591,9 @@ const GraphBoard = () => {
             if (e.key === "Control") {
                 ctrlDown.current = true;
             }
+            if (e.key === "Shift") {
+                shiftDown.current = true;
+            }
         };
         
         const keyUp = (e) => {
@@ -478,6 +603,9 @@ const GraphBoard = () => {
             }
             if (e.key === "Control") {
                 ctrlDown.current = false;
+            }
+            if (e.key === "Shift") {
+                shiftDown.current = false;
             }
         };
         
@@ -634,10 +762,20 @@ const GraphBoard = () => {
                 let cnpos = fieldToCanvas(i.pos);
                 //////////////////////////////////////////////////////////////////////
                 //Debugging option
-                ctx.font = "8pt Courier new";
+                ctx.font = "16pt Courier new";
                 ctx.fillText(i.id, cnpos[0], cnpos[1]);
+                if (i.kind) {
+                    ctx.fillText(opToSymb(i.kind), cnpos[0], cnpos[1] + 15);
+                }
                 //////////////////////////////////////////////////////////////////////
+                if (selected.indexOf(i.id) >= 0) {
+                    ctx.save();
+                    ctx.strokeStyle = "#1E90FF";
+                }
                 drawCirc(ctx, cnpos, rad);
+                if (selected.indexOf(i.id) >= 0) {
+                    ctx.restore();
+                }
                 if (currNode === i.id) {
                     ctx.restore();
                 }
@@ -658,7 +796,7 @@ const GraphBoard = () => {
         window.requestAnimationFrame(draw);
         
     }, [canvasRes, graph, isDarkTheme, currNode, fieldToCanvas,
-        back_color, screenOffc, stroke_color, scale, fieldSize]);
+        back_color, screenOffc, stroke_color, scale, fieldSize, selected]);
     
     return (
         <div className="logicBoard">
@@ -713,20 +851,39 @@ const GraphBoard = () => {
                  value={scale}
                />
              </div>
-             {/* <div className="labels"> */}
-             {/*   {buttonsArr.map((i, pos) => */}
-             {/*       <button onClick={() => { */}
-             {/*           nodeMarker.current = i.op; */}
-             {/*           setTestState(testState + 1); */}
-             {/*       }} key={pos}> */}
-             {/*         {i.op.toUpperCase()} */}
-             {/*       </button> */}
-             {/*   )} */}
-             {/* </div> */}
+             <div className="labels">
+               {inferencesArr.map((i, pos) =>
+                   <button key={pos}>
+                     {i.symb}
+                   </button>
+               )}
+             </div>
+             <div className="labels right">
+               {operationsArr.map((i, pos) =>
+                   <button onClick={() => {
+                       nodeMarker.current = i.op;
+                       setTestState(testState + 1);
+                   }} key={pos}>
+                     {i.symb}
+                   </button>
+               )}
+             </div>
              <div className="debugInfo">
+               <div>
+                 {`isObjectValid: ${JSON.stringify(isObjectValid)}`}
+               </div>
                <div>
                  {`current node ID: ${currNode === null ? "none" : currNode}`}
                </div>
+               <div>
+                 {`selected: ${JSON.stringify(selected)}`}
+               </div>
+               {/* <div> */}
+               {/*   {`ctrlDown: ${JSON.stringify(ctrlDown.current)}`} */}
+               {/* </div> */}
+               {/* <div> */}
+               {/*   {`shiftDown: ${JSON.stringify(ctrlDown.current)}`} */}
+               {/* </div> */}
                <div>
                  {`connected graphs: ${JSON.stringify(connectedNodes)}`}
                </div>
@@ -741,7 +898,9 @@ const GraphBoard = () => {
                </div>
                <div>
                  {`graph: ${JSON.stringify(graph)}`}
-               </div> 
+               </div>
+
+               
              </div>
            </>
           }

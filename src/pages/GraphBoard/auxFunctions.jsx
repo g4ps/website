@@ -105,4 +105,12 @@ const drawEdge = (ctx, start, end, rad=30) => {
     ctx.fill();
 };
 
-export {notColliding, isTouching, detectMob, sq_norm, drawCirc, drawAxis, drawFieldBox, drawEdge};
+// for some fucking reason JS doesn't ship with this function,
+// but it ships with half-assed OOP and a fucking zoo of string functions. Go figure
+const uniq = (arr) => {
+
+    return arr.filter((value, index, array) => array.indexOf(value) === index);
+}
+
+export {notColliding, isTouching, detectMob, sq_norm,
+        drawCirc, drawAxis, drawFieldBox, drawEdge, uniq};
