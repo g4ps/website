@@ -110,7 +110,16 @@ const drawEdge = (ctx, start, end, rad=30) => {
 const uniq = (arr) => {
 
     return arr.filter((value, index, array) => array.indexOf(value) === index);
-}
+};
+
+const inInterval = (x1, x2, a) => {
+    if (x2 < x1) {
+        let t = x2;
+        x2 = x1;
+        x1 = t;
+    }
+    return x1 < a && a < x2;
+};
 
 export {notColliding, isTouching, detectMob, sq_norm,
-        drawCirc, drawAxis, drawFieldBox, drawEdge, uniq};
+        drawCirc, drawAxis, drawFieldBox, drawEdge, uniq, inInterval};

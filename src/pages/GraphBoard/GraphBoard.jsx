@@ -2,44 +2,243 @@ import {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import { useSelector } from 'react-redux';
 import Slider from '../../components/Slider/Slider.jsx';
 import './GraphBoard.scss';
-import {notColliding, isTouching, detectMob,
+import {notColliding, isTouching, detectMob, inInterval,
         sq_norm, drawCirc, drawAxis, drawFieldBox, drawEdge, uniq} from './auxFunctions.jsx';
+
+import {exampleGraphs} from './exampleGraphs.jsx';
 
 // Disclamer: vast majority of the stuff that's going
 // on here was half-assed and was done purely for fun
 
 // TODO: split this thing into several managable pieces
 
-const rad = 30;
+const settings = {
+    showDebugingInfo: false,
+    showCircleIDS: false,
+    showCircleLogicSymbols: false,
+    circleRadius: 20,
+    showLogicControls: false,
+    showZoomSlider: true,
+    debugButton: false
+};
+
+const example_graph = exampleGraphs[2]; //TODO: add legs and interface for this thing
+
+
+const findNode = (obj, id) => {
+    if (Array.isArray(obj)) {
+        for (let i = 0; i < obj.length; i++) {
+            let rt = findNode(obj[i], id);
+            if (rt)
+                return rt;
+        }
+        return null;
+    }
+    if (obj.id === id)
+        return obj;
+    return findNode(obj.args, id);
+};
+
+const findNodeParent = (obj, id) => {
+    if (Array.isArray(obj)) {
+        for (let i = 0; i < obj.length; i++) {
+            let rt = findNode(obj[i]);
+            if (rt)
+                return rt;
+        }
+        return null;
+    }
+    if (obj.id === id)
+        return obj;
+    return findNode(obj.args, id);
+
+}
+
+const objSubIds = (obj) => {
+    let ret = [obj.id];
+    obj.args.forEach(i =>
+        ret = [...ret, ...objSubIds(i)]
+    );
+    return ret;
+};
+
+const areEqual = (arg1, arg2) => {
+    //TODO this thing ought to be verbose somehow
+    if (!arg1 || !arg2)
+        return false;
+
+    if (arg1.kind.var || arg2.kind.var) {
+        return arg1.kind.var === arg2.kind.var;
+    }
+    if (arg1.kind !== arg2.kind)
+        return false;
+    if (arg1.kind === "imp") {
+        for (let i = 0; i < 2; i++) {
+
+            if (!areEqual(arg1.args[i], arg2.args[i]))
+                return false;
+        }
+        return true;
+    }
+    if (arg1.args.length !== arg2.args.length)
+        return false;
+    for (let i = 0; i < arg1.args.length; i++) {
+        let st = false;
+        for (let j = 0; j < arg2.args.length; j++) {
+            if (areEqual(arg1.args[i], arg2.args[j])) {
+                st = true;
+                break;
+            }
+        }
+        if (!st)
+            return false;
+    }
+    return true;
+};
 
 const inferencesArr = [
     {
+        symb: "areEq?",
+        argNum: 2,
+        func: (obj, nodes) => {
+            if (nodes.length !== 2)
+                return false;
+            let fst = findNode(obj, nodes[0]);
+            let snd = findNode(obj, nodes[1]);
+            return areEqual(fst, snd);
+        }
+    },
+    {
+        // Modus ponens (p -> q, p :== q)
         symb: "MP",
+        name: "Modus Ponens",
+        formula: "p -> q, p => q",        
+        argNum: 2,
+        func: (obj, nodes) => {
+            let fst = null;
+            let snd = null;
+            let ret = null;
+            for (let i = 0; i < obj.length && !(fst && snd); i++) {
+                let j = obj[i];
+                if (nodes.indexOf(j.id) >= 0) {
+                    if (fst) //if both nodes are top-level
+                        return null; 
+                    fst = j;
+                }
+                else if (j.kind === "imp") {
+                    let k = nodes.indexOf(j.args[0].id) >= 0;
+                    if (k) {
+                        if (snd)
+                            return null;
+                        snd = j.args[0];
+                        ret = j.args[1];
+                    }
+                }
+            }
+            if (fst && snd) {
+                return areEqual(fst, snd) ? ret : null;
+            }
+            return null;
+        }
     },
     {
         symb: "MT",
+        name: "Modus Tolens",
+        formula: "p -> q, !q => !p",
+        argNum: 2,
+        func: (obj, nodes) => {
+            let parentID = null;
+            let fst = null;
+            let snd = null;
+            let ret = null;
+            for (let i = 0; i < obj.length && !(fst && snd); i++) {
+                let j = obj[i];
+                if (nodes.indexOf(j.id) >= 0 && j.kind === "not") {
+                    if (fst) //if both nodes are top-level
+                        return null; 
+                    fst = j;                    
+                }
+                else if (j.kind === "imp") {
+                    let k = nodes.indexOf(j.args[1].id) >= 0;
+                    if (k) {
+                        if (snd)
+                            return null;
+                        parentID = j.id;
+                        snd = j.args[1];
+                        ret = j.args[0];
+                    }
+                }
+            }
+            ret = {
+                id: null, //id in null indicates that this node is brand new
+                kind: "not",
+                explicitDirection: false, //we don't care about "not"'s direction
+                suggest: parentID, // id of the node, to whose place this node should go
+                args: [ret]
+            };
+            if (fst && snd) {
+                return areEqual(fst.args[0], snd) ? ret : null;
+            }
+            return null;
+        }
+        
+    },
+    // {
+    //     symb: "CD",
+    //     name: "Constructive Dilemma",
+    //     formula: "(p -> q) /\ (r -> s), p \/ r => q \/ s"
+    // },
+    // {
+    //     symb: "DD",
+    // },
+    // {
+    //     symb: "DS",
+    // },
+    // {
+    //     symb: "HS",
+    // },
+    // {
+    //     symb: "CJ",
+    // },
+    // {
+    //     symb: "SM",
+    // },
+    // {
+    //     symb: "AD",
+    // },    
+];
+
+const replArr = [
+    {
+        symb: "Assoc",
     },
     {
-        symb: "CD",
+        symb: "Com",
     },
     {
-        symb: "DD",
+        symb: "Dist",
     },
     {
-        symb: "DS",
+        symb: "Contra",
     },
     {
-        symb: "HS",
+        symb: "DN",
     },
     {
-        symb: "CJ",
+        symb: "DML",
     },
     {
-        symb: "SM",
+        symb: "Idem",
     },
     {
-        symb: "AD",
-    },    
+        symb: "equiv",
+    },
+    {
+        symb: "impl",
+    },
+    {
+        symb: "Exp",
+    },
 ];
 
 const operationsArr = [
@@ -106,6 +305,7 @@ const GraphBoard = () => {
 
     //This things is used in zoom calculations
     const wheelSensetivity = 0.0007;
+    const nodeUnderMouseRef = useRef([]);
 
     //References for both canvases
     const canvasRef = useRef(null);
@@ -140,6 +340,8 @@ const GraphBoard = () => {
     const fieldMouseRef = useRef([0, 0]);
     
     const [mousePosState, setMousePosState] = useState(null);
+
+    const [lastMousePressField, setLastMousePressField] = useState([]);
     
     const [isMousePressed, setIsMousePressed] = useState(false);
     
@@ -161,7 +363,30 @@ const GraphBoard = () => {
     const fieldSize = useMemo(() => [[-5000, 5000], [-5000, 5000]], []);
 
     const maxScale = 8;
-    const minScale = 0.3;    
+    const minScale = 0.3;
+
+    const addEdge = useCallback((st, fin) => {
+        let currID = maxID.current;
+        maxID.current++;
+        graphRef.current.edges.push({id: currID, nodes: [st, fin]});
+        setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+        return currID;
+    }, []);
+
+    const addNode = useCallback((pos, kind) => {
+        let currID = maxID.current;
+        maxID.current++;
+        graphRef.current.nodes.push({id: currID, pos: pos, kind: kind || nodeMarker.current});
+        setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+        return currID;
+    }, []);
+
+    const deleteNode = useCallback((id) => {
+        graphRef.current.nodes = graphRef.current.nodes.filter(i => i.id !== id);
+        graphRef.current.edges = graphRef.current.edges.filter(i => i.nodes.indexOf(id) < 0);
+        setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+        setCurrNode(null);
+    }, []);
 
     const changeScale = useCallback((ds) => {
         // Bound for the scale; sets the value in interval [minScale, maxScale]
@@ -348,6 +573,60 @@ const GraphBoard = () => {
     const isObjectValid = useMemo(() => {
         return isLogicalObjectValid(graphToObj);
     }, [graphToObj]);
+
+    const completeGraph = useCallback((retObj, parentNode = null) => {
+        if (retObj.id === null) {
+            let newID = addNode(graph?.nodes?.find(i => i.id === retObj.suggest).pos
+                                || [0, 0], retObj.kind);
+            if (retObj.suggest)
+                delete retObj.suggest;
+            if (parentNode !== null) {
+                addEdge(newID, parentNode);
+            }
+            retObj.args.forEach(i => addEdge(i.id, newID));
+        }
+        retObj.args.forEach(i => completeGraph(i, retObj.id));
+        return ;        
+    }, [addNode, addEdge, graph]);
+
+    const handleInference = useCallback((op) => {
+        if (!isObjectValid) {
+            console.log("No inference on logically invalid objects");
+            return ;
+        }
+        //////////////////////////////////////////////////////////////////////
+        // Current support is limited, so there's this thing
+        //////////////////////////////////////////////////////////////////////
+        const supported = ["MP",  "MT"];
+        if (supported.indexOf(op.symb) < 0) {
+            console.log(`${op.symb} is not currently supported`);
+        }
+        //////////////////////////////////////////////////////////////////////
+        if (selected.length !== op.argNum) {
+            console.log(`${op.symb} requires ${op.argNum} arguments`);            
+            return ;
+        }
+        let ret = op.func(graphToObj, selected);
+        if (ret === null) {
+            console.log(`${op.name} could not be applied :(`);
+            return ;
+        }
+        else {
+            console.log(`${op.name} was successfully applied`);
+            console.log(ret);
+        }
+        let retInd = objSubIds(ret);
+        let total = connectedNodes.find(i => i.indexOf(selected[0]) >= 0).concat(
+            connectedNodes.find(i => i.indexOf(selected[1]) >= 0));
+        total = uniq(total);
+        let toDelete = total.filter(i => retInd.indexOf(i) < 0);
+        completeGraph(ret);
+        toDelete.forEach(i =>
+            deleteNode(i)
+        );
+        setSelected([]);
+
+    }, [graphToObj, selected, connectedNodes, isObjectValid, deleteNode]);
     
     const canvasFOV = useMemo(() => {
         return [canvasRes[0] / scale, canvasRes[1] / scale];
@@ -356,6 +635,8 @@ const GraphBoard = () => {
     const fieldToCanvas = useCallback((vec) => {
         //Function that transfers field coordinates to
         //canvas unshifted unscaled coordinates
+        if (vec === null || screenOffc === null || canvasRes === null)
+            return [0, 0];
         return [vec[0] - screenOffc[0], canvasRes[1] - vec[1] + screenOffc[1]];
     }, [screenOffc, canvasRes]);
 
@@ -406,12 +687,48 @@ const GraphBoard = () => {
         return fieldMouseRef.current;
     }, [mousePosState, canvasToField]);
 
-    const addNode = useCallback((pos) => {
-        let currID = maxID.current;
-        maxID.current++;
-        graphRef.current.nodes.push({id: currID, pos: pos, kind: nodeMarker.current});
-        setGraph(JSON.parse(JSON.stringify(graphRef.current)));        
-    }, []);
+    const pressedMouseSpan = useMemo(() => {
+        if (!isMousePressed)
+            return null;
+        return [lastMousePressField, fieldMousePos];
+    }, [isMousePressed, fieldMousePos]);
+
+    const selectionRect = useMemo(() => {
+        if (!currNode)
+            return pressedMouseSpan;
+        return null;
+    }, [currNode, pressedMouseSpan]);
+
+    const underRect = useMemo(() => {
+        let ret = null;
+        if (!graph)
+            return ret;
+        if (!selectionRect)
+            return ret;
+        ret = graph.nodes.filter(i =>
+            inInterval(selectionRect[0][0], selectionRect[1][0], i.pos[0]) &&
+                inInterval(selectionRect[0][1], selectionRect[1][1], i.pos[1])
+                
+        ).map(i => i.id);
+        return ret;
+    }, [selectionRect, graph]);
+
+    useEffect(() => {
+        if (underRect)
+            setSelected(underRect);
+    }, [underRect]);
+
+    const nodeUnderMouse = useMemo(() => {
+        if (fieldMousePos === null || fieldMousePos.length !== 2)
+            return [];
+        nodeUnderMouseRef.current = graph?.nodes?.filter(i =>
+            sq_norm([i.pos[0] - fieldMousePos[0], i.pos[1] - fieldMousePos[1]]) <
+                settings.circleRadius ** 2
+        ) || [];
+        return nodeUnderMouseRef.current;
+    }, [graph, fieldMousePos]);
+
+
 
     const clearEverything = useCallback(() => {
         graphRef.current = {
@@ -419,15 +736,9 @@ const GraphBoard = () => {
             edges: []
         };
         setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+        setSelected([]);
         setCurrNode(null);
     }, []); 
-
-    const deleteNode = useCallback((id) => {
-        graphRef.current.nodes = graphRef.current.nodes.filter(i => i.id !== id);
-        graphRef.current.edges = graphRef.current.edges.filter(i => i.nodes.indexOf(id) < 0);
-        setGraph(JSON.parse(JSON.stringify(graphRef.current)));
-        setCurrNode(null);
-    }, []);
 
     const keyPressHandle = useCallback((key) => {
         //Handling of properly pressed (not raw inputs) keys
@@ -435,7 +746,7 @@ const GraphBoard = () => {
         const doffc = 50 / scale;
         if (key === 'a') {
             if (fieldMouseRef.current &&
-                notColliding(graphRef.current.nodes, fieldMouseRef.current, rad)) {
+                notColliding(graphRef.current.nodes, fieldMouseRef.current, settings.circleRadius)) {
                 addNode(fieldMouseRef.current);
             }
         }
@@ -456,6 +767,14 @@ const GraphBoard = () => {
         //Debug and whatnot 
         if (key === "arrowup") {
             changeScreenOffc(0, doffc); 
+        }
+        if (key === "h") {
+            clearEverything();
+            graphRef.current = JSON.parse(example_graph);
+            let existingIDS = [...graphRef.current.nodes.map(i => i.id),
+                             ...graphRef.current.edges.map(i => i.id)];
+            maxID.current = Math.max(...existingIDS) + 1;
+            setGraph(JSON.parse(example_graph));
         }
         if (key === "arrowdown") {
             changeScreenOffc(0, -doffc); 
@@ -483,25 +802,56 @@ const GraphBoard = () => {
         }
     }, [currNode, changeScreenOffc, addNode,
         clearEverything, deleteNode,
-        scale, screenOffc, changeScale, scaleOnPoint, selected]); 
+        scale, screenOffc, changeScale, scaleOnPoint, selected]);
 
-    const handleMousePress = useCallback((mdp) => {
+    const handleMouseUnpress = useCallback((mdp) => {
         if (currNode !== null) {
-            if (notColliding(graphRef.current.nodes.filter(i => i.id !== currNode),
-                             fieldMouseRef.current, rad)) {
+            // If currNode was already chosen
+            if (nodeUnderMouseRef.current.length === 0) {
                 graphRef.current.nodes.find(i => i.id === currNode).pos = fieldMouseRef.current;
                 setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                 setCurrNode(null);
                 return ;
             }
+            else {
+                if (nodeUnderMouseRef.current.length === 0)
+                    return ;
+                let newNodes = [currNode, nodeUnderMouseRef.current[0].id];
+                let curr_edge =
+                    graphRef.current.edges.find(i => i.nodes.toString() === newNodes.toString());
+                if (curr_edge === undefined) {
+                    let currID = maxID.current;
+                    maxID.current++;
+                    graphRef.current.edges.push({id: currID, nodes: newNodes});
+                    if (!isDirectional.current) {
+                        graphRef.current.edges.push({id: currID, nodes: [newNodes[1], newNodes[0]]});
+                    }
+                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                    setCurrNode(null);
+                    prevNode.current = null;
+                }
+                else {
+                    let ind = graphRef.current.edges.indexOf(curr_edge);
+                    if (ind >= 0) {
+                        graphRef.current.edges.splice(ind, 1);                    
+                    }
+                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
+                    setCurrNode(null);
+                    prevNode.current = null;
+                }
+            }
         }
-        let set = false;
+    }, [currNode, nodeUnderMouse]);
 
+    // handling mouse press
+    const handleMousePress = useCallback((mdp) => {
+        setLastMousePressField(fieldMouseRef.current);
+        let set = false;
         for (let i = 0; i < graph?.nodes?.length; i++) {
             let j = graph?.nodes[i];
             let k = canvasToField(mdp);
             if (sq_norm([j.pos[0] - k[0], j.pos[1] - k[1]]) <
-                rad ** 2) {
+                settings.circleRadius ** 2) {
                 if (nodeMarker.current !== null) {
                     graphRef.current.nodes.find(k => k.id === j.id).kind =
                         JSON.parse(JSON.stringify(nodeMarker.current));
@@ -509,6 +859,7 @@ const GraphBoard = () => {
                     nodeMarker.current = null;
                 }
                 else if (shiftDown.current) {
+                    // debugger;
                     setSelected(uniq([...selected, j.id]));
                 }
                 else {
@@ -528,6 +879,7 @@ const GraphBoard = () => {
 
 
     useEffect(() => {
+        return ;
         // handling of change of current node ID. Used for selecting, drawing and whatnot
         if (currNode === null) {
             prevNode.current = null;
@@ -621,10 +973,12 @@ const GraphBoard = () => {
 
         const onMouseUp = (e) => {
             setIsMousePressed(false);
+            handleMouseUnpress([e.offsetX, e.offsetY]);
         };
-
+        
         const onMouseOut = (e) => {
             setIsMousePressed(false);
+            setCurrNode(null);
         };
 
         const onWheel = (e) => {
@@ -682,16 +1036,32 @@ const GraphBoard = () => {
             clearCanvas();
             ctx.translate(0, -canvasRes[1] * (scale - 1));
             ctx.scale(scale, scale);
+            if (selectionRect ) {
+                ctx.save();
+                ctx.strokeStyle = "#add8e6";
+                ctx.fillStyle = "#add8e666";
+                ctx.lineWidth = 1;
+                // ctx.rect(0, 0, 100, 100);
+                // debugger;
+                let fst = fieldToCanvas(selectionRect[0]);
+                let snd = fieldToCanvas(selectionRect[1]);
+                ctx.rect(fst[0], fst[1], snd[0] - fst[0], snd[1] - fst[1]);
+                ctx.fillRect(fst[0], fst[1], snd[0] - fst[0], snd[1] - fst[1]);
+                ctx.stroke();
+                ctx.restore();
+            }
             if (currNode !== null) {
                 let nd = graph?.nodes?.find(i => i.id === currNode);
                 if (nd !== undefined) {
                     ctx.save();
                     ctx.strokeStyle = "orange";
                     ctx.fillStyle = "orange";
-                    drawEdge(ctx, fieldToCanvas(nd.pos), fieldToCanvas(fieldMousePos), rad);
-                    drawCirc(ctx, fieldToCanvas(fieldMousePos), rad);
+                    drawEdge(ctx, fieldToCanvas(nd.pos), fieldToCanvas(fieldMousePos),
+                             settings.circleRadius);
+                    drawCirc(ctx, fieldToCanvas(pressedMouseSpan ? pressedMouseSpan[1] : [0, 0]), settings.circleRadius);
                     ctx.restore();
-                }
+                }                
+                
                 graph?.edges.forEach((i) => {
                     if (currNode !== null && i.nodes.indexOf(currNode) >= 0) {
                         ctx.save();
@@ -701,7 +1071,7 @@ const GraphBoard = () => {
                             graph?.nodes?.find(j => j.id === i.nodes[0]).pos;
                         let end = i.nodes[1] === nd.id ? fieldMousePos : 
                             graph?.nodes?.find(j => j.id === i.nodes[1]).pos;
-                        drawEdge(ctx, fieldToCanvas(st), fieldToCanvas(end), rad);
+                        drawEdge(ctx, fieldToCanvas(st), fieldToCanvas(end), settings.circleRadius);
                         ctx.restore();
                     }
                 });
@@ -709,19 +1079,8 @@ const GraphBoard = () => {
         };
 
         window.requestAnimationFrame(draw);
-    }, [graph, fieldMousePos, currNode, screenOffc,
-        fieldToCanvas, stroke_color, canvasRes, scale]);
-
-    // useEffect(() => {
-    //     const canvas = canvasRef.current;
-    //     if (!canvas)
-    //         return ;
-    //     const ctx = canvas.getContext("2d");
-    //     if (!ctx)
-    //         return ;
-    //     ctx.translate(0, -canvasRes[1] * (scale - 1));
-    //     ctx.scale(scale, scale);
-    // }, []);
+    }, [selectionRect, graph, pressedMouseSpan, currNode, screenOffc,
+        fieldToCanvas, stroke_color, canvasRes, scale, pressedMouseSpan]);
 
     useEffect(() => {
         //Underlying canvas handling
@@ -760,19 +1119,20 @@ const GraphBoard = () => {
                     ctx.setLineDash([3, 3]);
                 }
                 let cnpos = fieldToCanvas(i.pos);
-                //////////////////////////////////////////////////////////////////////
-                //Debugging option
-                ctx.font = "16pt Courier new";
-                ctx.fillText(i.id, cnpos[0], cnpos[1]);
-                if (i.kind) {
-                    ctx.fillText(opToSymb(i.kind), cnpos[0], cnpos[1] + 15);
+                if (settings.showCircleIDS) {
+                    ctx.font = "16pt Courier new";
+                    ctx.fillText(i.id, cnpos[0], cnpos[1]);
+                    if (settings.showCircleLogicSymbols) {
+                        if (i.kind) {
+                            ctx.fillText(opToSymb(i.kind), cnpos[0], cnpos[1] + 15);
+                        }
+                    } 
                 }
-                //////////////////////////////////////////////////////////////////////
                 if (selected.indexOf(i.id) >= 0) {
                     ctx.save();
                     ctx.strokeStyle = "#1E90FF";
                 }
-                drawCirc(ctx, cnpos, rad);
+                drawCirc(ctx, cnpos, settings.circleRadius);
                 if (selected.indexOf(i.id) >= 0) {
                     ctx.restore();
                 }
@@ -787,7 +1147,7 @@ const GraphBoard = () => {
                 }
                 let st = graph?.nodes?.find(j => j.id === i.nodes[0]).pos;
                 let end = graph?.nodes?.find(j => j.id === i.nodes[1]).pos;
-                drawEdge(ctx, fieldToCanvas(st), fieldToCanvas(end), rad);
+                drawEdge(ctx, fieldToCanvas(st), fieldToCanvas(end), settings.circleRadius);
                 if (i.nodes.indexOf(currNode) >= 0) {
                     ctx.restore();
                 }
@@ -844,64 +1204,96 @@ const GraphBoard = () => {
              <div className="zoom">
                
              </div>
-             <div className="slideControl">
-               <Slider
-                 min={minScale}
-                 max={maxScale}
-                 value={scale}
-               />
-             </div>
-             <div className="labels">
-               {inferencesArr.map((i, pos) =>
-                   <button key={pos}>
-                     {i.symb}
-                   </button>
-               )}
-             </div>
-             <div className="labels right">
-               {operationsArr.map((i, pos) =>
-                   <button onClick={() => {
-                       nodeMarker.current = i.op;
-                       setTestState(testState + 1);
-                   }} key={pos}>
-                     {i.symb}
-                   </button>
-               )}
-             </div>
-             <div className="debugInfo">
-               <div>
-                 {`isObjectValid: ${JSON.stringify(isObjectValid)}`}
-               </div>
-               <div>
-                 {`current node ID: ${currNode === null ? "none" : currNode}`}
-               </div>
-               <div>
-                 {`selected: ${JSON.stringify(selected)}`}
-               </div>
-               {/* <div> */}
-               {/*   {`ctrlDown: ${JSON.stringify(ctrlDown.current)}`} */}
-               {/* </div> */}
-               {/* <div> */}
-               {/*   {`shiftDown: ${JSON.stringify(ctrlDown.current)}`} */}
-               {/* </div> */}
-               <div>
-                 {`connected graphs: ${JSON.stringify(connectedNodes)}`}
-               </div>
-               <div>
-                 {`topDogs: ${JSON.stringify(topDogs)}`}
-               </div>
-               <div>
-                 {`graphToObj: ${JSON.stringify(graphToObj)}`}
-               </div>
-               <div>
-                 {`nodeMarker: ${JSON.stringify(nodeMarker.current)}`}
-               </div>
-               <div>
-                 {`graph: ${JSON.stringify(graph)}`}
-               </div>
+             {
+                 settings.showZoomSlider && 
+                     <div className="slideControl">
+                       <Slider
+                         min={minScale}
+                         max={maxScale}
+                         value={scale}
+                       />
+                     </div>
+             }
+             {settings.showLogicControls &&
+              <>
+                <div className="labels">
+                  {inferencesArr.map((i, pos) =>
+                      <button key={pos}
+                              onClick={() => handleInference(i)} 
+                      >
+                        {i.symb}
+                      </button>
+                  )}
+                  {replArr.map((i, pos) =>
+                      <button key={pos}>
+                        {i.symb}
+                      </button>
+                  )}
+                </div>
+                <div className="labels right">
+                  {operationsArr.map((i, pos) =>
+                      <button onClick={() => {
+                          nodeMarker.current = i.op;
+                          setTestState(testState + 1);
+                      }} key={pos}>
+                        {i.symb}
+                      </button>
+                  )}
+                </div>
+              </>
+             }
+             {settings.showDebugingInfo &&
+              <div className="debugInfo">
+                <div>
+                  {`pressedMouseSpan: ${JSON.stringify(pressedMouseSpan)}`}
+                </div>
+                <div>
+                  {`isMousePressed: ${JSON.stringify(isMousePressed)}`}
+                </div>
+                <div>
+                  {`nodeUnderMouse: ${JSON.stringify(nodeUnderMouse)}`}
+                </div>
+                <div>
+                {`isObjectValid: ${JSON.stringify(isObjectValid)}`}
+              </div>
+              <div>
+                {`current node ID: ${currNode === null ? "none" : currNode}`}
+              </div>
+              <div>
+                {`selected: ${JSON.stringify(selected)}`}
+              </div>
+              {/* <div> */}
+              {/*   {`ctrlDown: ${JSON.stringify(ctrlDown.current)}`} */}
+              {/* </div> */}
+              {/* <div> */}
+              {/*   {`shiftDown: ${JSON.stringify(ctrlDown.current)}`} */}
+              {/* </div> */}
+              <div>
+                {`connected graphs: ${JSON.stringify(connectedNodes)}`}
+              </div>
+              <div>
+                {`topDogs: ${JSON.stringify(topDogs)}`}
+              </div>
+              <div>
+                {`graphToObj: ${JSON.stringify(graphToObj)}`}
+              </div>
+              <div>
+                {`nodeMarker: ${JSON.stringify(nodeMarker.current)}`}
+              </div>
+              <div>
+                {`graph: ${JSON.stringify(graph)}`}
+              </div>
 
-               
-             </div>
+              
+              </div>}
+             {settings.debugButton &&
+              <button
+                className="debugButton" onClick={() => {
+                    console.log(testRef.current);
+                }}>
+                press
+              </button>
+             }
            </>
           }
         </div>
