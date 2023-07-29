@@ -14,14 +14,14 @@ import {exampleGraphs} from './exampleGraphs.jsx';
 
 const settings = {
     showDebugingInfo: false,
-    showCircleIDS: true,
+    showCircleIDS: false,
     circleIDFont: "10pt Courier new",
-    showCircleLogicSymbols: true,
+    showCircleLogicSymbols: false,
     circleRadius: 20,
     showLogicControls: false,
     showZoomSlider: true,
     debugButton: false,
-    showAddButton: true
+    showAddButton: true,
 };
 
 
