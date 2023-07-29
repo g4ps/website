@@ -13,14 +13,15 @@ import {exampleGraphs} from './exampleGraphs.jsx';
 // TODO: split this thing into several managable pieces
 
 const settings = {
-    showDebugingInfo: true,
+    showDebugingInfo: false,
     showCircleIDS: true,
     circleIDFont: "10pt Courier new",
     showCircleLogicSymbols: true,
     circleRadius: 20,
-    showLogicControls: true,
+    showLogicControls: false,
     showZoomSlider: true,
-    debugButton: true
+    debugButton: false,
+    showAddButton: true
 };
 
 
@@ -79,8 +80,8 @@ const areEqual = (arg1, arg2) => {
     if (!arg1 || !arg2)
         return false;
 
-    if (arg1.kind.var || arg2.kind.var) {
-        return arg1.kind.var === arg2.kind.var;
+    if (arg1.kind.pred || arg2.kind.pred) {
+        return arg1.kind.pred === arg2.kind.pred;
     }
     if (arg1.kind !== arg2.kind)
         return false;
@@ -279,26 +280,31 @@ const operationsArr = [
         symb: "CLR"
     },
     {
-        op: {var: "P"},
+        op: {pred: "P"},
         symb: "P"
     },
     {
-        op: {var: "Q"},
+        op: {pred: "Q"},
         symb: "Q"
     },
     {
-        op: {var: "R"},
+        op: {pred: "R"},
         symb: "R"
     },
     {
-        op: {var: "S"},
+        op: {pred: "S"},
         symb: "S"
+    },
+    {
+        op: {var: "x"},
+        symb: "x"
     },
 ];
 
 const opToSymb = (str) => {
     return operationsArr.find(i => i.op === str ||
-                              (i.op.var !== undefined && i.op.var === str.var))?.symb;
+                              ((i.op.pred !== undefined || i.op.var !== undefined) &&
+                               (i.op.pred === str.pred || i.op.var !== str.var)))?.symb;
 };
 
 const GraphBoard = () => {
@@ -331,7 +337,7 @@ const GraphBoard = () => {
         edges: []
     });
     
-    const maxID = useRef(0); //current maximal ID for a node and/or edge
+    const maxID = useRef(1); //current maximal ID for a node and/or edge
     const prevNode = useRef(null); //revious value of currNode
     
     //Those two variables probably need to unite into something beautiful
@@ -375,6 +381,30 @@ const GraphBoard = () => {
 
     const maxScale = 8;
     const minScale = 0.3;
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // FFFF   OOO   L
+    // F     O   O  L
+    // FF    O   O  L
+    // F     O   O  L
+    // F      OOO   LLLLL
+    //
+    //  FOL
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    const predicates = [
+        {
+            name: "in",
+            unicodeSymb: "∈",            
+            latexSymb: "\in",
+            commutative: false,
+            transitive: false,
+            arity: 2,            
+        },
+    ];
+    
+    //////////////////////////////////////////////////////////////////////////////////////////
 
     const addEdge = useCallback((st, fin) => {
         if (st === fin)
@@ -551,6 +581,36 @@ const GraphBoard = () => {
         
     }, [topDogs, connectedNodes, dawgToObj]);
 
+    const objToString = useCallback((obj) => {
+        let fst;
+        let needEnd = false;
+        if (obj === null)
+            return null;
+        if (obj.kind !== null) {
+            if (obj.kind.var)
+                fst = obj.kind.var;
+            else if (obj.kind.pred)
+                fst = obj.kind.pred;
+            else {
+                fst = "(" + obj.kind;
+                needEnd = true;
+            }
+        }
+        // return "dfa";
+        let ret = fst;
+        obj.args.forEach(i =>
+            ret += ` ${objToString(i)}`
+        );
+        if (needEnd)
+            ret += ")";
+        return ret;
+    }, []);
+
+    const graphToString = useMemo(() => {
+        return graphToObj.map(i => objToString(i));
+    }, [graphToObj]);
+
+
     const isLogicalObjectValid = useCallback((obj) => {
         if (obj === null)
             return false;
@@ -577,6 +637,9 @@ const GraphBoard = () => {
         }
         else if (!obj.kind) {
             return false;
+        }
+        else if (obj.kind.pred) {
+            return obj.args.length === 0;
         }
         else if (obj.kind.var) {            
             return obj.args.length === 0;
@@ -729,8 +792,6 @@ const GraphBoard = () => {
     }, [selectionRect, graph]);
 
     useEffect(() => {
-        // debugger;
-        console.log(underRect);
         if (underRect)
             setSelected(underRect);
     }, [underRect]);
@@ -957,7 +1018,6 @@ const GraphBoard = () => {
             if (ctrlDown.current) {
                 if (e.deltaY)
                     scaleOnPoint(- e.deltaY * wheelSensetivity, mousePos.current);
-                // console.log(e.deltaY);
             }
             else {
                 changeScreenOffc(e.deltaX / scale, -(e.deltaY / scale));
@@ -1012,8 +1072,6 @@ const GraphBoard = () => {
                 ctx.strokeStyle = "#add8e6";
                 ctx.fillStyle = "#add8e666";
                 ctx.lineWidth = 1;
-                // ctx.rect(0, 0, 100, 100);
-                // debugger;
                 let fst = fieldToCanvas(selectionRect[0]);
                 let snd = fieldToCanvas(selectionRect[1]);
                 ctx.rect(fst[0], fst[1], snd[0] - fst[0], snd[1] - fst[1]);
@@ -1185,6 +1243,10 @@ const GraphBoard = () => {
                        />
                      </div>
              }
+             {
+                 settings.showAddButton &&
+                     <div/>
+             }
              {settings.showLogicControls &&
               <>
                 {/* <div className="labels"> */}
@@ -1216,6 +1278,9 @@ const GraphBoard = () => {
              {settings.showDebugingInfo &&
               <div className="debugInfo">
                 <div>
+                  {`graphToString: ${JSON.stringify(graphToString)}`}
+                </div>
+                <div>
                   {`pressedMouseSpan: ${JSON.stringify(pressedMouseSpan)}`}
                 </div>
                 <div>
@@ -1233,12 +1298,6 @@ const GraphBoard = () => {
               <div>
                 {`selected: ${JSON.stringify(selected)}`}
               </div>
-              {/* <div> */}
-              {/*   {`ctrlDown: ${JSON.stringify(ctrlDown.current)}`} */}
-              {/* </div> */}
-              {/* <div> */}
-              {/*   {`shiftDown: ${JSON.stringify(ctrlDown.current)}`} */}
-              {/* </div> */}
               <div>
                 {`connected graphs: ${JSON.stringify(connectedNodes)}`}
               </div>
@@ -1253,9 +1312,7 @@ const GraphBoard = () => {
               </div>
               <div>
                 {`graph: ${JSON.stringify(graph)}`}
-              </div>
-
-              
+              </div>              
               </div>}
              {settings.debugButton &&
               <button
