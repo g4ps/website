@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useEffect, useCallback} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.scss';
@@ -11,26 +11,26 @@ import ErrorPage from './pages/ErrorPage/ErrorPage.jsx';
 import Propositional from './pages/Logic/Propositional/Propositional.jsx';
 import Progress from './pages/Logic/Progress/Progress.jsx';
 import GraphBoard from './pages/GraphBoard/GraphBoard.jsx';
-import {makeDark, makeLight, toggle} from './features/theme/themeSlice.jsx';
+import {makeDark, makeLight} from './features/theme/themeSlice.jsx';
 
 const App = () =>  {
     const isDarkTheme = useSelector(state => state.theme.value);
     const dispatch = useDispatch();
 
-    const setIsDarkTheme = (val) => {
+    const setIsDarkTheme = useCallback((val) => {
         if (val) {
             dispatch(makeDark());
         }
         else {
             dispatch(makeLight());
         }
-    };
+    }, [dispatch]);
 
     useEffect(() => {
         //setting proper variables to proper
         setIsDarkTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
         console.log("Howdy there, partner");
-    }, []);
+    }, [setIsDarkTheme]);
 
     useEffect(() => {
 
