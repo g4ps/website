@@ -13,16 +13,28 @@ import {exampleGraphs} from './exampleGraphs.jsx';
 // TODO: split this thing into several managable pieces
 
 const settings = {
-    showDebugingInfo: false,
-    showCircleIDS: false,
-    showCircleLogicSymbols: false,
+    showDebugingInfo: true,
+    showCircleIDS: true,
+    circleIDFont: "10pt Courier new",
+    showCircleLogicSymbols: true,
     circleRadius: 20,
-    showLogicControls: false,
+    showLogicControls: true,
     showZoomSlider: true,
-    debugButton: false
+    debugButton: true
 };
 
-const example_graph = exampleGraphs[2]; //TODO: add legs and interface for this thing
+
+// const settings = {
+//     showDebugingInfo: false,
+//     showCircleIDS: false,
+//     showCircleLogicSymbols: false,
+//     circleRadius: 20,
+//     showLogicControls: false,
+//     showZoomSlider: true,
+//     debugButton: false
+// // };
+
+const example_graph = exampleGraphs[1]; //TODO: add legs and interface for this thing
 
 
 const findNode = (obj, id) => {
@@ -292,10 +304,9 @@ const opToSymb = (str) => {
 const GraphBoard = () => {
 
     //TODO:
+    // - add panning
     // - move legend into a more appropriate element
     // - add a mini-map
-    // - add object handling
-    // - add panning
     // - add selection of a group of nodes
 
     const isDarkTheme = useSelector(state => state.theme.value);
@@ -366,6 +377,8 @@ const GraphBoard = () => {
     const minScale = 0.3;
 
     const addEdge = useCallback((st, fin) => {
+        if (st === fin)
+            return null;
         let currID = maxID.current;
         maxID.current++;
         graphRef.current.edges.push({id: currID, nodes: [st, fin]});
@@ -373,10 +386,11 @@ const GraphBoard = () => {
         return currID;
     }, []);
 
-    const addNode = useCallback((pos, kind) => {
+    const addNode = useCallback((pos, kind) => {        
         let currID = maxID.current;
         maxID.current++;
-        graphRef.current.nodes.push({id: currID, pos: pos, kind: kind || nodeMarker.current});
+        graphRef.current.nodes.push({id: currID, pos: pos.map(i => Math.round(i)),
+                                     kind: kind || nodeMarker.current});
         setGraph(JSON.parse(JSON.stringify(graphRef.current)));
         return currID;
     }, []);
@@ -589,44 +603,45 @@ const GraphBoard = () => {
         return ;        
     }, [addNode, addEdge, graph]);
 
-    const handleInference = useCallback((op) => {
-        if (!isObjectValid) {
-            console.log("No inference on logically invalid objects");
-            return ;
-        }
-        //////////////////////////////////////////////////////////////////////
-        // Current support is limited, so there's this thing
-        //////////////////////////////////////////////////////////////////////
-        const supported = ["MP",  "MT"];
-        if (supported.indexOf(op.symb) < 0) {
-            console.log(`${op.symb} is not currently supported`);
-        }
-        //////////////////////////////////////////////////////////////////////
-        if (selected.length !== op.argNum) {
-            console.log(`${op.symb} requires ${op.argNum} arguments`);            
-            return ;
-        }
-        let ret = op.func(graphToObj, selected);
-        if (ret === null) {
-            console.log(`${op.name} could not be applied :(`);
-            return ;
-        }
-        else {
-            console.log(`${op.name} was successfully applied`);
-            console.log(ret);
-        }
-        let retInd = objSubIds(ret);
-        let total = connectedNodes.find(i => i.indexOf(selected[0]) >= 0).concat(
-            connectedNodes.find(i => i.indexOf(selected[1]) >= 0));
-        total = uniq(total);
-        let toDelete = total.filter(i => retInd.indexOf(i) < 0);
-        completeGraph(ret);
-        toDelete.forEach(i =>
-            deleteNode(i)
-        );
-        setSelected([]);
 
-    }, [graphToObj, selected, connectedNodes, isObjectValid, deleteNode]);
+    // const handleInference = useCallback((op) => {
+    //     if (!isObjectValid) {
+    //         console.log("No inference on logically invalid objects");
+    //         return ;
+    //     }
+    //     //////////////////////////////////////////////////////////////////////
+    //     // Current support is limited, so there's this thing
+    //     //////////////////////////////////////////////////////////////////////
+    //     const supported = ["MP",  "MT"];
+    //     if (supported.indexOf(op.symb) < 0) {
+    //         console.log(`${op.symb} is not currently supported`);
+    //     }
+    //     //////////////////////////////////////////////////////////////////////
+    //     if (selected.length !== op.argNum) {
+    //         console.log(`${op.symb} requires ${op.argNum} arguments`);            
+    //         return ;
+    //     }
+    //     let ret = op.func(graphToObj, selected);
+    //     if (ret === null) {
+    //         console.log(`${op.name} could not be applied :(`);
+    //         return ;
+    //     }
+    //     else {
+    //         console.log(`${op.name} was successfully applied`);
+    //         console.log(ret);
+    //     }
+    //     let retInd = objSubIds(ret);
+    //     let total = connectedNodes.find(i => i.indexOf(selected[0]) >= 0).concat(
+    //         connectedNodes.find(i => i.indexOf(selected[1]) >= 0));
+    //     total = uniq(total);
+    //     let toDelete = total.filter(i => retInd.indexOf(i) < 0);
+    //     completeGraph(ret);
+    //     toDelete.forEach(i =>
+    //         deleteNode(i)
+    //     );
+    //     setSelected([]);
+
+    // }, [graphToObj, selected, connectedNodes, isObjectValid, deleteNode]);
     
     const canvasFOV = useMemo(() => {
         return [canvasRes[0] / scale, canvasRes[1] / scale];
@@ -714,6 +729,8 @@ const GraphBoard = () => {
     }, [selectionRect, graph]);
 
     useEffect(() => {
+        // debugger;
+        console.log(underRect);
         if (underRect)
             setSelected(underRect);
     }, [underRect]);
@@ -749,6 +766,8 @@ const GraphBoard = () => {
                 notColliding(graphRef.current.nodes, fieldMouseRef.current, settings.circleRadius)) {
                 addNode(fieldMouseRef.current);
             }
+        }
+        if (key === 's') {
         }
         if (key === 'c') {
             clearEverything();
@@ -808,27 +827,25 @@ const GraphBoard = () => {
         if (currNode !== null) {
             // If currNode was already chosen
             if (nodeUnderMouseRef.current.length === 0) {
+                // If there's no node under the mouse during unpress, move the current node
                 graphRef.current.nodes.find(i => i.id === currNode).pos = fieldMouseRef.current;
                 setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                 setCurrNode(null);
                 return ;
             }
             else {
+                // if there's a node under the mouse, add a path
                 if (nodeUnderMouseRef.current.length === 0)
                     return ;
                 let newNodes = [currNode, nodeUnderMouseRef.current[0].id];
                 let curr_edge =
                     graphRef.current.edges.find(i => i.nodes.toString() === newNodes.toString());
                 if (curr_edge === undefined) {
-                    let currID = maxID.current;
-                    maxID.current++;
-                    graphRef.current.edges.push({id: currID, nodes: newNodes});
+                    addEdge(newNodes[0], newNodes[1]);
                     if (!isDirectional.current) {
-                        graphRef.current.edges.push({id: currID, nodes: [newNodes[1], newNodes[0]]});
+                        addEdge(newNodes[1], newNodes[0]);
                     }
-                    setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                     setCurrNode(null);
-                    prevNode.current = null;
                 }
                 else {
                     let ind = graphRef.current.edges.indexOf(curr_edge);
@@ -837,7 +854,6 @@ const GraphBoard = () => {
                     }
                     setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                     setCurrNode(null);
-                    prevNode.current = null;
                 }
             }
         }
@@ -845,7 +861,7 @@ const GraphBoard = () => {
 
     // handling mouse press
     const handleMousePress = useCallback((mdp) => {
-        setLastMousePressField(fieldMouseRef.current);
+        setLastMousePressField(fieldMouseRef.current); // setting 
         let set = false;
         for (let i = 0; i < graph?.nodes?.length; i++) {
             let j = graph?.nodes[i];
@@ -858,14 +874,14 @@ const GraphBoard = () => {
                     setGraph(JSON.parse(JSON.stringify(graphRef.current)));
                     nodeMarker.current = null;
                 }
-                else if (shiftDown.current) {
-                    // debugger;
-                    setSelected(uniq([...selected, j.id]));
-                }
                 else {
                     setCurrNode(j.id);
                     set = true;
                 }
+                if (shiftDown.current) {
+                    setSelected(uniq([...selected, j.id]));
+                }
+                
             }            
         }
         if (!set) {
@@ -876,51 +892,6 @@ const GraphBoard = () => {
         }
         // setMouseDownPos(null);
     }, [currNode, canvasToField, graph, selected]);
-
-
-    useEffect(() => {
-        return ;
-        // handling of change of current node ID. Used for selecting, drawing and whatnot
-        if (currNode === null) {
-            prevNode.current = null;
-            return ;
-        }
-        let pn = prevNode.current;
-        let nn = currNode;
-        let f1 = graph?.nodes?.find(i => i.id === pn);
-        let f2 = graph?.nodes?.find(i => i.id === nn);
-        if (pn !== null && nn !== null &&
-            f1 !== undefined &&
-            f2 !== undefined 
-           ) {
-            let newNodes = [prevNode.current, currNode];
-            let curr_edge =
-                graphRef.current.edges.find(i => i.nodes.toString() === newNodes.toString());
-            if (curr_edge === undefined) {
-                let currID = maxID.current;
-                maxID.current++;
-                graphRef.current.edges.push({id: currID, nodes: newNodes});
-                if (!isDirectional.current) {
-                    graphRef.current.edges.push({id: currID, nodes: [newNodes[1], newNodes[0]]});
-                }
-                setGraph(JSON.parse(JSON.stringify(graphRef.current)));
-                setCurrNode(null);
-                prevNode.current = null;
-            }
-            else {
-                let ind = graphRef.current.edges.indexOf(curr_edge);
-                if (ind >= 0) {
-                    graphRef.current.edges.splice(ind, 1);                    
-                }
-                setGraph(JSON.parse(JSON.stringify(graphRef.current)));
-                setCurrNode(null);
-                prevNode.current = null;
-            }
-        }
-        else {
-            prevNode.current = currNode;
-        }
-    }, [graph, currNode]);
 
     useEffect(() => {
         //adding events to windows and canvases
@@ -1077,7 +1048,7 @@ const GraphBoard = () => {
                 });
             }
         };
-
+        
         window.requestAnimationFrame(draw);
     }, [selectionRect, graph, pressedMouseSpan, currNode, screenOffc,
         fieldToCanvas, stroke_color, canvasRes, scale, pressedMouseSpan]);
@@ -1120,7 +1091,7 @@ const GraphBoard = () => {
                 }
                 let cnpos = fieldToCanvas(i.pos);
                 if (settings.showCircleIDS) {
-                    ctx.font = "16pt Courier new";
+                    ctx.font = settings.circleIDFont || "16pt Courier new";
                     ctx.fillText(i.id, cnpos[0], cnpos[1]);
                     if (settings.showCircleLogicSymbols) {
                         if (i.kind) {
@@ -1216,20 +1187,20 @@ const GraphBoard = () => {
              }
              {settings.showLogicControls &&
               <>
-                <div className="labels">
-                  {inferencesArr.map((i, pos) =>
-                      <button key={pos}
-                              onClick={() => handleInference(i)} 
-                      >
-                        {i.symb}
-                      </button>
-                  )}
-                  {replArr.map((i, pos) =>
-                      <button key={pos}>
-                        {i.symb}
-                      </button>
-                  )}
-                </div>
+                {/* <div className="labels"> */}
+                {/*   {inferencesArr.map((i, pos) => */}
+                {/*       <button key={pos} */}
+                {/*               onClick={() => handleInference(i)}  */}
+                {/*       > */}
+                {/*         {i.symb} */}
+                {/*       </button> */}
+                {/*   )} */}
+                {/*   {replArr.map((i, pos) => */}
+                {/*       <button key={pos}> */}
+                {/*         {i.symb} */}
+                {/*       </button> */}
+                {/*   )} */}
+                {/* </div> */}
                 <div className="labels right">
                   {operationsArr.map((i, pos) =>
                       <button onClick={() => {
