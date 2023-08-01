@@ -379,8 +379,8 @@ const GraphBoard = () => {
     //Sets an invevrval for OX and OY, for which the field is defined
     const fieldSize = useMemo(() => [[-5000, 5000], [-5000, 5000]], []);
 
-    const maxScale = 8;
-    const minScale = 0.3;
+    const maxScale = 4;
+    const minScale = 1/4;
 
     //////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -433,9 +433,10 @@ const GraphBoard = () => {
     }, []);
 
     const changeScale = useCallback((ds) => {
+
         // Bound for the scale; sets the value in interval [minScale, maxScale]
         // BTW there's no check on sanity of the scale boundaries, so beware.
-        let newScale = ds + scale;
+        let newScale = 2**(ds + Math.log2(scale)); //made this thing logarithmic for usability 
         newScale = Math.max(Math.min(maxScale, newScale), minScale);
         setScale(newScale);
         return newScale - scale;
@@ -1237,9 +1238,9 @@ const GraphBoard = () => {
                  settings.showZoomSlider && 
                      <div className="slideControl">
                        <Slider
-                         min={minScale}
-                         max={maxScale}
-                         value={scale}
+                         min={Math.log2(minScale)}
+                         max={Math.log2(maxScale)}
+                         value={Math.log2(scale)}
                        />
                      </div>
              }
