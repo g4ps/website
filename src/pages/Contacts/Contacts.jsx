@@ -149,6 +149,9 @@ const Contacts = () => {
                <li>
                  <Link to='../graphBoard'>GraphBoard</Link>
                </li>
+               <li>
+                 <Link to='../showOff'>Some elements</Link>
+               </li>
              </ul>
              <p>
                Semi-professionally Gene's known as the Gene of all trades. He's got experience

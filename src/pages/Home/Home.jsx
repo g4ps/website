@@ -1,4 +1,4 @@
-import { Outlet, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Home.scss";
 
 const Home = () => {
@@ -6,11 +6,11 @@ const Home = () => {
         <div className="home">
           <h1>Mighty Gene's personal page</h1>
           <ul>
-            {/* <Link to="/showOff"> */}
-            {/*   <li> */}
-            {/*     Gene's showing off */}
-            {/*   </li> */}
-            {/* </Link> */}
+            <Link to="/showOff">
+              <li>
+                Gene's showing off
+              </li>
+            </Link>
             <Link to="/graphBoard">
               <li>
                 GraphBoard
@@ -32,18 +32,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,10 +1,10 @@
-import './Slider.scss';
+import styles from './Slider.module.scss';
 import {useMemo} from 'react';
 
-const Slider = ({min, max, value, setValue = () => {}}) => {
+const currHeight = 200;
+const bopHeight = 12;
 
-    const currHeight = 200;
-    const bopHeight = 12; //TODO: remove magic numbers;
+const Slider = ({min=0, max=100, value, setValue = () => {}}) => {
 
     const offc = useMemo(() => {
         const perc = (value - min) / (max - min);
@@ -20,24 +20,31 @@ const Slider = ({min, max, value, setValue = () => {}}) => {
         );
     }
     
-    return <div className="evgSlider">
-             <div className="bop"
+    return <div className={styles.evgSlider}>
+             <div className={styles.bop}
                   onClick={() => setValue(min)}
              />
              <div
-               className="inb"
+               className={styles.inb}
                style={{
                    height: (offc - bopHeight) + "px"              
                }}
              />
-             <div className="bop"/>
              <div
-               className="inb"
+               draggable={true}
+               className={styles.bop}
+               onDrag={(e) => {
+                   console.log(e);
+               }}
+             >
+             </div>
+             <div
+               className={styles.inb}
                style={{
                    height: (currHeight - offc) + "px"              
                }}
              />
-             <div className="bop"
+             <div className={styles.bop}
                   onClick={() => setValue(max)}
              />
            </div>;
