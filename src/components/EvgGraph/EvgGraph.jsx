@@ -51,11 +51,11 @@ const EvgGraph = ({data = []}) => {
     
     return (
         <div className={styles.evgGraph}>
-          <svg widht={width} height={height}>
-            <linearGradient id="myGradient" gradientTransform="rotate(90)">
-              <stop offset="5%" stop-color="blue" />
-              <stop offset="50%" stop-color="transparent" />
-            </linearGradient>
+        <svg widht={width} height={height} viewBox={`-2 -2 ${width + 5} ${height + 5}`}>
+            {/* <linearGradient id="myGradient" gradientTransform="rotate(90)"> */}
+            {/*   <stop offset="5%" stop-color="blue" /> */}
+            {/*   <stop offset="50%" stop-color="transparent" /> */}
+            {/* </linearGradient> */}
             <path d={graphPath} fill="url(#myGradient)" stroke={outlineTextColor}/>
             {svgPositions.map((i, pos) =>
                 <Boop key={pos} center={i} fill={"blue"} rad={3}/>

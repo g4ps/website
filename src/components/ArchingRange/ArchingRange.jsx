@@ -53,11 +53,11 @@ const ArchingRange = ({min, max, value}) => {
     const fracToPath = useCallback((frac) => {
         //returns a string of the path of the arch with respect to the given fraction
         return `M ${tupleToString(fracToPosition(0, rad))}
-                A ${thickness/2} ${thickness/2}, 0, 0, 0, ${tupleToString(fracToPosition(0, rad - thickness))},
-                A ${rad - thickness} ${rad - thickness}, 1, ${isLargeFlag(frac)}, 1,
+                A ${thickness/2} ${thickness/2} 0 0 0 ${tupleToString(fracToPosition(0, rad - thickness))}
+                A ${rad - thickness} ${rad - thickness} 1 ${isLargeFlag(frac)} 1
                          ${tupleToString(fracToPosition(frac, rad - thickness))}
-                A ${thickness/2} ${thickness/2}, 1, 1, 0, ${tupleToString(fracToPosition(frac, rad))},
-                A ${rad} ${rad}, 0, ${isLargeFlag(frac)}, 0, ${tupleToString(fracToPosition(0, rad))},
+                A ${thickness/2} ${thickness/2} 1 1 0 ${tupleToString(fracToPosition(frac, rad))}
+                A ${rad} ${rad} 0 ${isLargeFlag(frac)} 0 ${tupleToString(fracToPosition(0, rad))}
                 `;
     }, [fracToPosition, isLargeFlag]);
     
@@ -76,10 +76,6 @@ const ArchingRange = ({min, max, value}) => {
     return (
         <div className={styles.archingRange}>
           <svg widht={size} height={size}>
-            <linearGradient id="Gradient1">
-              <stop stopColor="red" offset="0" />
-              {/* <stop stopColor="" offset="50" /> */}
-            </linearGradient>            
             {/* <circle cx={center[0]} cy={center[1]} r="800" fill="white"/> */}
             {/* <circle cx={center[0]} cy={center[1]} r={rad} stroke="grey"/> */}
             {/* <circle cx={center[0]} cy={center[1]} r={rad - thickness} stroke="grey"/> */}
