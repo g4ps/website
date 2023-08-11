@@ -15,5 +15,8 @@
 	    border: 2px solid var(--text-color);
 	    border-radius: 6px;
 	}
+	li:hover {
+	    background: var(--on-hover);
+	}
     }
 }

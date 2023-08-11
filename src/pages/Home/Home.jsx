@@ -6,16 +6,16 @@ const Home = () => {
         <div className="home">
           <h1>Mighty Gene's personal page</h1>
           <ul>
+            {/* <Link to="/showOff"> */}
+            {/*   <li> */}
+            {/*     Gene's showing off */}
+            {/*   </li> */}
+            {/* </Link> */}
             <Link to="/graphBoard">
               <li>
                 GraphBoard
               </li>
             </Link>            
-            {/* <Link to="/logic"> */}
-            {/*   <li> */}
-            {/*     Gene's doing Logic (and you can too) */}
-            {/*   </li> */}
-            {/* </Link>            */} 
             <Link to="/maths">
               <li>
                 Gene's doing Maths

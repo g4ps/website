@@ -7,6 +7,7 @@ import Home from './pages/Home/Home.jsx';
 import Maths from './pages/Maths/Maths.jsx';
 import Contact from './pages/Contacts/Contacts.jsx';
 import Logic from './pages/Logic/Logic.jsx';
+import ShowOff from './pages/ShowOff/ShowOff.jsx';
 import ErrorPage from './pages/ErrorPage/ErrorPage.jsx';
 import Propositional from './pages/Logic/Propositional/Propositional.jsx';
 import Progress from './pages/Logic/Progress/Progress.jsx';
@@ -66,6 +67,7 @@ const App = () =>  {
               <Route path="contacts" element={<Contact />} />
               <Route path="maths" element={<Maths />}/>
               <Route path="logic" element={<Logic />}/>
+              <Route path="showOff" element={<ShowOff />}/>
               <Route path="graphBoard" element={<GraphBoard />}/>
               <Route path="logic/progress" element={<Progress />}/>
               <Route path="logic/propositional" element={<Propositional />}/>
