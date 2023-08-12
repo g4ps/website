@@ -53,7 +53,7 @@ const ShowOff = () => {
         <div className="showOff">
           <h1>Gene's showing off</h1>
           <p>
-            Sometimes Gene likes to make different elements. For some reason he desided to
+            Sometimes Gene likes to make different elements. For some reason he decided to
             put'em here
           </p>
           <div className="gallery">
