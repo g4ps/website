@@ -49,7 +49,7 @@ const Employment = () => {
             employed: `This means that Gene is happily working hard (or hardly working, who knows)
                 on delivering the best product known to man. This also means that you can't
                 get Gene for cheap, but doesn't mean that you can't get him for some absurd
-                amount of money. Getting in touch can't harm no one, so you can try you
+                amount of money. Getting in touch can't hurt no one, so you can try you
                 luck anyways.`,
             iffy : `Gene is known for many of his mighty skills, and one of those
                 skills is to see writing on the wall. Maybe there's a disagreement about
