@@ -22,10 +22,7 @@
 
     }
     .slideControl {
-	position: fixed;
-	z-index: 3;
-	right: 6px;
-	top: 80px;
+        width: fit-content;
     }
 
     .labels {
@@ -67,6 +64,20 @@
 	    cursor: pointer;
 	    border-radius: 6px;
 	}
+    }
+    .history-block {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+    .rhs-block {
+        position: fixed;
+        z-index: 4;
+        right: 6px;
+	top: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: end;
     }
 }
 

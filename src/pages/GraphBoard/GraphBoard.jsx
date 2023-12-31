@@ -5,8 +5,6 @@ import './GraphBoard.scss';
 import {notColliding, isTouching, detectMob, inInterval,
         sq_norm, drawCirc, drawAxis, drawFieldBox, drawEdge, uniq} from './auxFunctions.jsx';
 
-import {exampleGraphs} from './exampleGraphs.jsx';
-
 // Disclamer: vast majority of the stuff that's going
 // on here was half-assed and was done purely for fun
 
@@ -14,28 +12,17 @@ import {exampleGraphs} from './exampleGraphs.jsx';
 
 const settings = {
     showDebugingInfo: false,
+    showLegend: true,
     showCircleIDS: false,
     circleIDFont: "10pt Courier new",
     showCircleLogicSymbols: false,
-    circleRadius: 20,
+    circleRadius: 15,
     showLogicControls: false,
     showZoomSlider: true,
     debugButton: false,
     showAddButton: true,
+    historyEnabled: false,
 };
-
-
-// const settings = {
-//     showDebugingInfo: false,
-//     showCircleIDS: false,
-//     showCircleLogicSymbols: false,
-//     circleRadius: 20,
-//     showLogicControls: false,
-//     showZoomSlider: true,
-//     debugButton: false
-// // };
-
-const example_graph = exampleGraphs[1]; //TODO: add legs and interface for this thing
 
 
 const findNode = (obj, id) => {
@@ -195,30 +182,7 @@ const inferencesArr = [
             return null;
         }
         
-    },
-    // {
-    //     symb: "CD",
-    //     name: "Constructive Dilemma",
-    //     formula: "(p -> q) /\ (r -> s), p \/ r => q \/ s"
-    // },
-    // {
-    //     symb: "DD",
-    // },
-    // {
-    //     symb: "DS",
-    // },
-    // {
-    //     symb: "HS",
-    // },
-    // {
-    //     symb: "CJ",
-    // },
-    // {
-    //     symb: "SM",
-    // },
-    // {
-    //     symb: "AD",
-    // },    
+    }
 ];
 
 const replArr = [
@@ -376,35 +340,13 @@ const GraphBoard = () => {
 
     const [screenOffc, setScreenOffc] = useState([0, 0]); //left down corner of the canvas
 
+    const [history, setHistory] = useState([]);
+
     //Sets an invevrval for OX and OY, for which the field is defined
     const fieldSize = useMemo(() => [[-5000, 5000], [-5000, 5000]], []);
 
     const maxScale = 4;
     const minScale = 1/4;
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    //
-    // FFFF   OOO   L
-    // F     O   O  L
-    // FF    O   O  L
-    // F     O   O  L
-    // F      OOO   LLLLL
-    //
-    //  FOL
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    const predicates = [
-        {
-            name: "in",
-            unicodeSymb: "∈",            
-            latexSymb: "\in",
-            commutative: false,
-            transitive: false,
-            arity: 2,            
-        },
-    ];
-    
-    //////////////////////////////////////////////////////////////////////////////////////////
 
     const addEdge = useCallback((st, fin) => {
         if (st === fin)
@@ -526,7 +468,7 @@ const GraphBoard = () => {
         }
         
         const interSubDawgEdges = outDawgEdges.filter(i => subdawgs.indexOf(i.nodes[0]) >= 0 &&
-                                                  subdawgs.indexOf(i.nodes[1]) >= 0 );
+                                                      subdawgs.indexOf(i.nodes[1]) >= 0 );
 
         // between the subdawgs, either everyone talks and does it in orderly fashion
         // (i.e. in a list), or no one talks
@@ -611,7 +553,6 @@ const GraphBoard = () => {
         return graphToObj.map(i => objToString(i));
     }, [graphToObj]);
 
-
     const isLogicalObjectValid = useCallback((obj) => {
         if (obj === null)
             return false;
@@ -666,46 +607,6 @@ const GraphBoard = () => {
         retObj.args.forEach(i => completeGraph(i, retObj.id));
         return ;        
     }, [addNode, addEdge, graph]);
-
-
-    // const handleInference = useCallback((op) => {
-    //     if (!isObjectValid) {
-    //         console.log("No inference on logically invalid objects");
-    //         return ;
-    //     }
-    //     //////////////////////////////////////////////////////////////////////
-    //     // Current support is limited, so there's this thing
-    //     //////////////////////////////////////////////////////////////////////
-    //     const supported = ["MP",  "MT"];
-    //     if (supported.indexOf(op.symb) < 0) {
-    //         console.log(`${op.symb} is not currently supported`);
-    //     }
-    //     //////////////////////////////////////////////////////////////////////
-    //     if (selected.length !== op.argNum) {
-    //         console.log(`${op.symb} requires ${op.argNum} arguments`);            
-    //         return ;
-    //     }
-    //     let ret = op.func(graphToObj, selected);
-    //     if (ret === null) {
-    //         console.log(`${op.name} could not be applied :(`);
-    //         return ;
-    //     }
-    //     else {
-    //         console.log(`${op.name} was successfully applied`);
-    //         console.log(ret);
-    //     }
-    //     let retInd = objSubIds(ret);
-    //     let total = connectedNodes.find(i => i.indexOf(selected[0]) >= 0).concat(
-    //         connectedNodes.find(i => i.indexOf(selected[1]) >= 0));
-    //     total = uniq(total);
-    //     let toDelete = total.filter(i => retInd.indexOf(i) < 0);
-    //     completeGraph(ret);
-    //     toDelete.forEach(i =>
-    //         deleteNode(i)
-    //     );
-    //     setSelected([]);
-
-    // }, [graphToObj, selected, connectedNodes, isObjectValid, deleteNode]);
     
     const canvasFOV = useMemo(() => {
         return [canvasRes[0] / scale, canvasRes[1] / scale];
@@ -787,7 +688,7 @@ const GraphBoard = () => {
         ret = graph.nodes.filter(i =>
             inInterval(selectionRect[0][0], selectionRect[1][0], i.pos[0]) &&
                 inInterval(selectionRect[0][1], selectionRect[1][1], i.pos[1])
-                
+            
         ).map(i => i.id);
         return ret;
     }, [selectionRect, graph]);
@@ -817,7 +718,17 @@ const GraphBoard = () => {
         setGraph(JSON.parse(JSON.stringify(graphRef.current)));
         setSelected([]);
         setCurrNode(null);
-    }, []); 
+    }, []);
+
+    const reconstructGraph = useCallback((graphString) => {
+        clearEverything();
+        const graphObj = JSON.parse(graphString);
+        graphRef.current = graphObj;
+        let existingIDS = [...graphObj.nodes.map(i => i.id),
+                           ...graphObj.edges.map(i => i.id)];
+        maxID.current = Math.max(...existingIDS) + 1;
+        setGraph(graphObj);
+    }, [clearEverything]);
 
     const keyPressHandle = useCallback((key) => {
         //Handling of properly pressed (not raw inputs) keys
@@ -850,12 +761,7 @@ const GraphBoard = () => {
             changeScreenOffc(0, doffc); 
         }
         if (key === "h") {
-            clearEverything();
-            graphRef.current = JSON.parse(example_graph);
-            let existingIDS = [...graphRef.current.nodes.map(i => i.id),
-                             ...graphRef.current.edges.map(i => i.id)];
-            maxID.current = Math.max(...existingIDS) + 1;
-            setGraph(JSON.parse(example_graph));
+            setHistory([...history, JSON.stringify(graph)]);
         }
         if (key === "arrowdown") {
             changeScreenOffc(0, -doffc); 
@@ -883,7 +789,7 @@ const GraphBoard = () => {
         }
     }, [currNode, changeScreenOffc, addNode,
         clearEverything, deleteNode,
-        scale, screenOffc, changeScale, scaleOnPoint, selected]);
+        scale, screenOffc, changeScale, scaleOnPoint, selected, graph, history]);
 
     const handleMouseUnpress = useCallback((mdp) => {
         if (currNode !== null) {
@@ -1015,7 +921,6 @@ const GraphBoard = () => {
         };
 
         const onWheel = (e) => {
-            e.preventDefault();
             if (ctrlDown.current) {
                 if (e.deltaY)
                     scaleOnPoint(- e.deltaY * wheelSensetivity, mousePos.current);
@@ -1033,7 +938,7 @@ const GraphBoard = () => {
         canvas.addEventListener("mousedown", onMouseDown);
         canvas.addEventListener("mouseup", onMouseUp);
         canvas.addEventListener("mouseout", onMouseOut);
-        canvas.addEventListener("wheel", onWheel);
+        canvas.addEventListener("wheel", onWheel, {passive: true});
         return () => {
             window.removeEventListener("resize", canvasResolutionSet);
             window.removeEventListener("keydown", keyDown);
@@ -1199,31 +1104,36 @@ const GraphBoard = () => {
                Mobile version coming later
              </p>
            </>
-             }
+               }
           {!isMobile &&
            <>
-             <div className="legend">
-               <ul>
-                 <li>
-                   Press "a" to add a node
-                 </li>
-                 <li>
-                   Press "c" to clear the field
-                 </li>
-                 <li>
-                   Press "r" to reset the view
-                 </li>
-                 <li>
-                   Press on a node and then press "d" to delete the node
-                 </li>
-                 <li>
-                   Press on consecutive nodes to draw an edge
-                 </li>
-                 <li>
-                   Ctrl + scroll to zoom
-                 </li>                
-               </ul>            
-             </div>
+             {settings.showLegend && 
+              <div className="legend">
+                <ul>
+                  <li>
+                    Press "a" to add a node
+                  </li>
+                  <li>
+                    Press "c" to clear the field
+                  </li>
+                  <li>
+                    Press "r" to reset the view
+                  </li>
+                  <li>
+                    Press on a node and then press "d" to delete the node
+                  </li>
+                  <li>
+                    Press on consecutive nodes to draw an edge
+                  </li>
+                  <li>
+                    Ctrl + scroll to zoom
+                  </li>
+                  {/* <li> */}
+                  {/*   Press "h" to save current graph in history */}
+                  {/* </li> */}
+                </ul>            
+              </div>
+             }
              <canvas ref={canvasRef} width={canvasRes[0]} height={canvasRes[1]}/>
              <canvas
                className="canvasOver"
@@ -1234,36 +1144,37 @@ const GraphBoard = () => {
              <div className="zoom">
                
              </div>
-             {
-                 settings.showZoomSlider && 
-                     <div className="slideControl">
-                       <Slider
-                         min={Math.log2(minScale)}
-                         max={Math.log2(maxScale)}
-                         value={Math.log2(scale)}
-                       />
-                     </div>
-             }
+             <div className="rhs-block">
+               {
+                   settings.showZoomSlider && 
+                       <div className="slideControl">
+                         <Slider
+                           min={Math.log2(minScale)}
+                           max={Math.log2(maxScale)}
+                           value={Math.log2(scale)}
+                         />
+                       </div>
+               }
+               {settings.historyEnabled &&
+                <div className="history-block">
+                  <button style={{background: history.length === 0 ? 'gray' : 'white'}} onClick={() => {
+                      setHistory([]);
+                  }}>
+                    clear
+                  </button>
+                  {history.map((i, pos) => <button key={pos* 15} onClick={() => {reconstructGraph(i);}}>
+                                 {pos}
+                               </button>)}
+
+                </div>
+               }
+             </div>
              {
                  settings.showAddButton &&
                      <div/>
              }
              {settings.showLogicControls &&
               <>
-                {/* <div className="labels"> */}
-                {/*   {inferencesArr.map((i, pos) => */}
-                {/*       <button key={pos} */}
-                {/*               onClick={() => handleInference(i)}  */}
-                {/*       > */}
-                {/*         {i.symb} */}
-                {/*       </button> */}
-                {/*   )} */}
-                {/*   {replArr.map((i, pos) => */}
-                {/*       <button key={pos}> */}
-                {/*         {i.symb} */}
-                {/*       </button> */}
-                {/*   )} */}
-                {/* </div> */}
                 <div className="labels right">
                   {operationsArr.map((i, pos) =>
                       <button onClick={() => {
@@ -1279,6 +1190,9 @@ const GraphBoard = () => {
              {settings.showDebugingInfo &&
               <div className="debugInfo">
                 <div>
+                  {`history: ${JSON.stringify(history)}`}
+                </div>
+                <div>
                   {`graphToString: ${JSON.stringify(graphToString)}`}
                 </div>
                 <div>
@@ -1291,29 +1205,29 @@ const GraphBoard = () => {
                   {`nodeUnderMouse: ${JSON.stringify(nodeUnderMouse)}`}
                 </div>
                 <div>
-                {`isObjectValid: ${JSON.stringify(isObjectValid)}`}
-              </div>
-              <div>
-                {`current node ID: ${currNode === null ? "none" : currNode}`}
-              </div>
-              <div>
-                {`selected: ${JSON.stringify(selected)}`}
-              </div>
-              <div>
-                {`connected graphs: ${JSON.stringify(connectedNodes)}`}
-              </div>
-              <div>
-                {`topDogs: ${JSON.stringify(topDogs)}`}
-              </div>
-              <div>
-                {`graphToObj: ${JSON.stringify(graphToObj)}`}
-              </div>
-              <div>
-                {`nodeMarker: ${JSON.stringify(nodeMarker.current)}`}
-              </div>
-              <div>
-                {`graph: ${JSON.stringify(graph)}`}
-              </div>              
+                  {`isObjectValid: ${JSON.stringify(isObjectValid)}`}
+                </div>
+                <div>
+                  {`current node ID: ${currNode === null ? "none" : currNode}`}
+                </div>
+                <div>
+                  {`selected: ${JSON.stringify(selected)}`}
+                </div>
+                <div>
+                  {`connected graphs: ${JSON.stringify(connectedNodes)}`}
+                </div>
+                <div>
+                  {`topDogs: ${JSON.stringify(topDogs)}`}
+                </div>
+                <div>
+                  {`graphToObj: ${JSON.stringify(graphToObj)}`}
+                </div>
+                <div>
+                  {`nodeMarker: ${JSON.stringify(nodeMarker.current)}`}
+                </div>
+                <div>
+                  {`graph: ${JSON.stringify(graph)}`}
+                </div>              
               </div>}
              {settings.debugButton &&
               <button
