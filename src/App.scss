@@ -4,7 +4,11 @@
 
 html {
     visibility: visible !important;
+    scrollbar-gutter: stable;
+}
 
+html.dark-theme {
+    color-scheme: dark;
 }
 
 
