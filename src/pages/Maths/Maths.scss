@@ -1,7 +1,6 @@
 .courses_list {
     display: flex;
     flex-direction: row;
-    // justify-content: center;
     flex-wrap: wrap;
     gap: 20px;
     .course {
@@ -38,6 +37,7 @@
 	    border: none;
 	    padding: 10px 20px;
 	    border-radius: 20px;
+            color: black;
 	}
     }
 
